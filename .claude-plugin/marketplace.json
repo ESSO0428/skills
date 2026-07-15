@@ -1,0 +1,25 @@
+{
+  "name": "esso0428",
+  "owner": {
+    "name": "ESSO0428"
+  },
+  "description": "研究與工程工作流 skills 的 Claude plugin marketplace。",
+  "plugins": [
+    {
+      "name": "esso0428-skills",
+      "displayName": "Skills for Research and Engineering Workflows",
+      "source": "./",
+      "description": "研究與工程工作流 skills 套件，包含 ROADMAP/docs 分層整理、skills repo 打包，以及 human-readable 改寫。",
+      "category": "engineering",
+      "keywords": [
+        "skills",
+        "engineering",
+        "research",
+        "roadmap",
+        "documentation",
+        "productivity",
+        "packaging"
+      ]
+    }
+  ]
+}

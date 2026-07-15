@@ -1,0 +1,5 @@
+interface:
+  display_name: "Skill Publisher Helper"
+  short_description: "把 skills 打包成可安裝 repo"
+policy:
+  allow_implicit_invocation: false

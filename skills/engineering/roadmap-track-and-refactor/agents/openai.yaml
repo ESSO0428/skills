@@ -1,0 +1,5 @@
+interface:
+  display_name: "ROADMAP Track & Refactor"
+  short_description: "整理 ROADMAP 與 docs 分層"
+policy:
+  allow_implicit_invocation: false

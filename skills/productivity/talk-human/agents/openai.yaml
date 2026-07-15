@@ -1,0 +1,5 @@
+interface:
+  display_name: "Talk Human"
+  short_description: "把技術內容改寫得更易讀"
+policy:
+  allow_implicit_invocation: false
