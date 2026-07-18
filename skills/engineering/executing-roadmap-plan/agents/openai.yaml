@@ -1,0 +1,5 @@
+interface:
+  display_name: "Executing ROADMAP Plan"
+  short_description: "按 ROADMAP 執行並維持 report 紀律"
+policy:
+  allow_implicit_invocation: false

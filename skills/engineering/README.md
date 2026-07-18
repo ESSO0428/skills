@@ -7,4 +7,5 @@
 只能在明確呼叫時使用。
 
 - **[roadmap-track-and-refactor](./roadmap-track-and-refactor/SKILL.md)** — 讓 `ROADMAP.md` 保持可讀，把深細節移到 `docs/roadmap*` 與 `docs/reports*`，保留 traceability，並乾淨地歸檔偏弱或已完成的方向。
+- **[executing-roadmap-plan](./executing-roadmap-plan/SKILL.md)** — 按既有 `ROADMAP.md` 計畫執行，並如實更新 checkbox、report 與 evidence。
 - **[skill-publisher-helper](./skill-publisher-helper/SKILL.md)** — 把一組 skills 打包成可安裝 repo，或重整既有 skills repo 的入口、bucket 與 `.claude-plugin` manifests。

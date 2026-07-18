@@ -1,9 +1,10 @@
 {
   "name": "esso0428-skills",
   "version": "0.1.0",
-  "description": "研究與工程工作流的 skills 套件，包含 ROADMAP/docs 分層整理、skills repo 打包，以及 human-readable 改寫。",
+  "description": "研究與工程工作流的 skills 套件，包含 ROADMAP/docs 分層整理、ROADMAP 計畫執行、skills repo 打包，以及 human-readable 改寫。",
   "skills": [
     "./skills/engineering/roadmap-track-and-refactor",
+    "./skills/engineering/executing-roadmap-plan",
     "./skills/engineering/skill-publisher-helper",
     "./skills/productivity/talk-human"
   ],
@@ -12,6 +13,7 @@
     "engineering",
     "research",
     "roadmap",
+    "execution",
     "documentation",
     "productivity",
     "packaging"

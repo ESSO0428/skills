@@ -11,7 +11,7 @@
   - [備註](#備註)
 <!--toc:end-->
 
-這是一個可安裝的 Skills 套件，用來承載可重複使用的 agent skills，重點放在研究迭代、實驗追蹤，以及讓輸出更適合人閱讀的工作流。
+這是一個可安裝的 Skills 套件，用來承載可重複使用的 agent skills，重點放在研究迭代、實驗追蹤、ROADMAP 計畫執行，以及讓輸出更適合人閱讀的工作流。
 
 ## 快速開始（Quickstart）
 
@@ -38,11 +38,13 @@ npx skills@latest add esso0428/skills
 ### 明確呼叫（User-invoked）
 
 - **[roadmap-track-and-refactor](./skills/engineering/roadmap-track-and-refactor/SKILL.md)** — 把 `ROADMAP.md` 維持成主看板，將深細節移到 `docs/roadmap*` / `docs/reports*`，保留 traceability，並乾淨地歸檔已完成方向。
+- **[executing-roadmap-plan](./skills/engineering/executing-roadmap-plan/SKILL.md)** — 按既有 `ROADMAP.md` 計畫執行，並如實更新 checkbox、report 與 evidence。
 - **[skill-publisher-helper](./skills/engineering/skill-publisher-helper/SKILL.md)** — 把一組 skills 打包成可安裝 repo，或重整既有 skills repo 的入口與結構。
 - **[talk-human](./skills/productivity/talk-human/SKILL.md)** — 把技術內容改寫成更精簡、結構更清楚、也更適合人閱讀的說明。
 
 ## 備註
 
 - `roadmap-track-and-refactor` 與 `skill-publisher-helper` 都是較完整的 workflow skills，內含 reference 檔與固定整理方法。
-- `talk-human` 則刻意保持很小，方便和其他 skills 組合使用。
+- `executing-roadmap-plan` 則是刻意保持精簡的 execution skill，用來補強 ROADMAP 執行時的 checkbox / report 紀律。
+- `talk-human` 也刻意保持很小，方便和其他 skills 組合使用。
 - 若這個套件之後繼續擴充，頂層 `README.md` 應維持簡短，把細節往 bucket README、skill 自己的文件，或正式發佈設定下放。
