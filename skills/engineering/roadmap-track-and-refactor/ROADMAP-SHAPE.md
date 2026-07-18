@@ -33,13 +33,20 @@
 格式預設為：
 
 ```md
-- 🗂️ `實驗名`：一句話說明結果、是否值得續做、下一步建議。
+- ✅ `實驗名`：一句話說明結果、為什麼仍有決策價值、下一步建議。
   - roadmap: [某 roadmap](docs/roadmap/2026-07-08_example.md)
   - report: [某 report](docs/reports/2026-07-08_example_report.md)
+
+- 🗂️ `實驗名`：一句話說明結果、為什麼先不主推、避免重複踩坑的提醒。
+  - roadmap: [某 archive roadmap](docs/roadmap/archive/2026-07-06_example.md)
+  - report: [某 archive report](docs/reports/archive/2026-07-06_example_report.md)
 ```
 
 規則：
-- 目的是讓使用者一眼看出哪些方向值得、哪些不值得再踩坑
+- `✅` 表示「已完成，但仍有決策價值」，入口優先指向 `docs/roadmap/*.md`
+- `🗂️` 表示「已完成，且已歸檔 / 暫不主推」，入口優先指向 `docs/roadmap/archive/*.md`
+- 若某個 archive 主題的完整報告仍常被當成主證據引用，可讓 report 暫留 `docs/reports/*.md`；但 roadmap 入口圖示仍應用 `🗂️`
+- 目的是讓使用者一眼看出哪些方向值得續看、哪些方向主要是避免再踩坑
 - 這裡只留短結論與入口，不留深細節
 
 ## 未來可能發展方向

@@ -7,13 +7,21 @@
 `ROADMAP.md` 只放入口，不放深細節。
 
 ```md
-- 🗂️ `某實驗`：一句話結論。
+- ✅ `某實驗`：一句話結論。
   - roadmap: [某 roadmap](docs/roadmap/2026-07-12_example.md)
   - report: [某 report](docs/reports/2026-07-12_example_report.md)
+
+- 🗂️ `某實驗`：一句話結論。
+  - roadmap: [某 archive roadmap](docs/roadmap/archive/2026-07-06_example.md)
+  - report: [某 archive report](docs/reports/archive/2026-07-06_example_report.md)
 ```
 
 規則：
 - 至少要能追到一份 `docs/roadmap*.md` 或 `docs/reports*.md`
+- `✅` 用於「已完成，但仍有決策價值」的條目
+- `🗂️` 用於「已完成，且已歸檔 / 暫不主推」的條目
+- `✅` 的 roadmap 入口優先追到 `docs/roadmap/*.md`
+- `🗂️` 的 roadmap 入口優先追到 `docs/roadmap/archive/*.md`
 - 若主看板保留了暫時表格，表下方仍應留往 `docs/reports` 的超連結
 
 ## 2. `docs/roadmap/*.md` 摘要模板

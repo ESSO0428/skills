@@ -19,6 +19,7 @@
 ## 一致性規則
 
 - `ROADMAP.md` 的 `## 已完成` 入口，應指向正確的 roadmap 檔案位置
+- 若 `ROADMAP.md` 的 `## 已完成` 入口指向 `docs/roadmap/archive/*.md`，應使用 `🗂️`，不要混成 `✅`
 - `docs/roadmap/archive/*.md` 應指向正確的 report 位置
 - 若 roadmap 與 report 的位置不同步，先修正連結與存放位置，再視為完成
 
