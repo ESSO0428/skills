@@ -34,7 +34,7 @@ npx skills@latest add esso0428/skills
 
 - [`skills/engineering`](./skills/engineering/README.md) — 放實驗工作流、ROADMAP 維護，以及研究 / 工程整理類 skills
 - [`skills/productivity`](./skills/productivity/README.md) — 放輸出可讀性與較輕量的工作流輔助 skills
-- [`skills/collection`](./skills/collection/) — 收錄其他作者 / 其他專案的第三方 skills，每個來源放在一個子目錄，並保持 upstream 原樣（目前有 [`superpowers/`](./skills/collection/superpowers/)）
+- [`skills/collection`](./skills/collection/) — 收錄其他作者 / 其他專案的第三方 skills，每個來源放在一個子目錄，原則上保持 upstream；若 curated subset 需要極小的 compatibility adjustment，會在對應 skill 與 README 中明確標示（目前有 [`superpowers/`](./skills/collection/superpowers/)）
 
 ## 內含 skills
 
@@ -47,19 +47,31 @@ npx skills@latest add esso0428/skills
 
 ## Third-party skill collections
 
-這裡收錄其他作者 / 其他專案發佈的第三方 skills，放在 [`skills/collection/`](./skills/collection/) 下，依來源放各子目錄，並保持 upstream 原樣不改寫。
+這裡收錄其他作者 / 其他專案發佈的第三方 skills，放在 [`skills/collection/`](./skills/collection/) 下，依來源放各子目錄，原則上保持 upstream 原樣；若 curated subset 需要極小的 compatibility adjustment，會在對應 skill 與 README 中明確標示。目前唯一有 local compatibility adjustments 的第三方 skill 是 Superpowers `writing-plans`。
 
 ### Superpowers
 
-精選自 [obra/superpowers](https://github.com/obra/superpowers) 的三個 skills。完整 Superpowers 是一套較完整的 agentic software-development methodology，涵蓋 brainstorming、implementation planning、TDD、debugging、verification、code review、subagent-driven development 與 branch / workflow management 等面向；不過完整 workflow 對我的日常使用情境來說較為龐大，因此這個 repository 並不重新收錄完整 Superpowers，只精選我實際最需要的幾個 composable skills，作為較輕量的 curated subset。
+來源：[`obra/superpowers`](https://github.com/obra/superpowers)
 
-收錄的 skills：
+完整 Superpowers 提供一套較完整的 agentic software-development workflow，涵蓋 brainstorming、implementation planning、TDD、debugging、verification、code review、subagent orchestration、branch / worktree workflow 等。
 
-- **[brainstorming](./skills/collection/superpowers/brainstorming/SKILL.md)** — 在實作前釐清需求、提出必要問題、比較不同方案，並把討論收斂成 design / spec。
+這裡只收錄目前較常使用、且適合獨立組合的三個 skills：
+
+- **[brainstorming](./skills/collection/superpowers/brainstorming/SKILL.md)** — 在開始實作前釐清需求、限制與設計方向，透過問題與方案比較逐步收斂成 design / spec。
 - **[writing-plans](./skills/collection/superpowers/writing-plans/SKILL.md)** — 根據既有 spec / requirements，產出具體且可執行的 implementation plan：指定需要建立或修改的檔案、定義 interfaces、拆分 implementation tasks、提供實作步驟，並包含 RED → GREEN 的 targeted testing / implementation 步驟。
 - **[using-git-worktrees](./skills/collection/superpowers/using-git-worktrees/SKILL.md)** — 在需要隔離開發環境時建立或使用 Git worktree，偵測既有 worktree / isolation、選擇適當位置、必要時建立隔離的 worktree，讓 feature、experiment 或其他工作與目前 working tree 分離。
 
-這三個 skills 是 upstream 原始副本，因此內容仍可能提及完整 Superpowers 中其他未包含於本 curated subset 的 skills；本 repository 不因此自動提供那些額外的 skills 或完整 Superpowers workflow。
+> [!NOTE]
+> `brainstorming` 與 `using-git-worktrees` 保持 upstream 原樣。
+>
+> `writing-plans` 僅包含少量、明確標示的 local compatibility overrides，目的有兩項：
+>
+> 1. **Optional execution handoff** — upstream 會將 `subagent-driven-development` / `executing-plans` 作為 required execution sub-skills；本 curated subset 未收錄它們，因此改為 optional execution helpers。它們若存在，只是可用的 execution options 之一，不具有高於目前 agent 或 host framework 原生 execution / delegation capabilities 的預設優先權。
+> 2. **Skill-name compatibility** — referenced skills 依可用性解析，優先嘗試 `superpowers:<name>`，再嘗試純 `<name>`，兩者皆不可用時才視為 unavailable。這個順序只用於解析 matching skill identity，不代表 execution priority。
+>
+> 實際 execution approach 由 implementation plan、使用者指示、目前可用能力，以及 host framework 自己的 routing / delegation policy 決定；可以使用 matching execution skill、目前 agent 的原生能力、host framework 的 subagent / delegation 機制，或 direct execution。缺少某個 referenced skill 時不會因此自動搜尋或安裝，也不會阻塞 workflow。
+>
+> `writing-plans/SKILL.md` 中的 local differences 以 `<!-- LOCAL OVERRIDE -->` 系列 marker 明確標示，方便未來與 upstream 同步。除這些 compatibility adjustments 外，其餘內容維持 upstream behavior；因此三個 skills 仍可能提及完整 Superpowers 中未包含於本 curated subset 的其他能力，本 repository 不因此自動提供完整 Superpowers workflow。
 
 建議一次一起安裝這三個 skills：
 

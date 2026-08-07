@@ -13,9 +13,14 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
-**Context:** If working in an isolated worktree, it should have been created via the `superpowers:using-git-worktrees` skill at execution time.
+<!-- LOCAL OVERRIDE START: skill reference compatibility; mode=replace -->
+
+**Context:** If working in an isolated worktree, it should have been created at execution time using an available worktree capability. When using a matching skill, resolve `superpowers:using-git-worktrees` first and `using-git-worktrees` otherwise.
+
+<!-- LOCAL OVERRIDE END: skill reference compatibility -->
 
 **Save plans to:** `docs/superpowers/plans/YYYY-MM-DD-<feature-name>.md`
+
 - (User preferences for plan location override this default)
 
 ## Scope Check
@@ -45,6 +50,7 @@ independently testable deliverable.
 ## Bite-Sized Task Granularity
 
 **Each step is one action (2-5 minutes):**
+
 - "Write the failing test" - step
 - "Run it to make sure it fails" - step
 - "Implement the minimal code to make the test pass" - step
@@ -55,10 +61,25 @@ independently testable deliverable.
 
 **Every plan MUST start with this header:**
 
+<!-- LOCAL OVERRIDE: optional execution handoff; target=plan-document-header-agentic-worker-note; mode=replace -->
+
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> [!NOTE]
+> **For agentic workers:** `subagent-driven-development` and
+> `executing-plans` are optional execution helpers. When resolving either
+> skill, prefer the namespaced form (`superpowers:<skill-name>`) when
+> available, then the bare `<skill-name>` form.
+>
+> This name-resolution order does not give those skills priority over the
+> current agent or host framework's native execution/delegation capabilities.
+> Choose the execution approach based on the implementation plan, user
+> instructions, available capabilities, and the host framework's own
+> routing/delegation policy. Do not automatically search for or install
+> missing skills.
+>
+> Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** [One sentence describing what this builds]
 
@@ -149,20 +170,61 @@ If you find issues, fix them inline. No need to re-review — just fix and move 
 
 ## Execution Handoff
 
-After saving the plan, offer execution choice:
+<!-- LOCAL OVERRIDE START: optional execution handoff -->
 
-**"Plan complete and saved to `docs/superpowers/plans/<filename>.md`. Two execution options:**
+> [!NOTE]
+> `subagent-driven-development` and `executing-plans` are optional execution
+> helpers in this curated subset. When resolving either skill, prefer the
+> namespaced form (`superpowers:<skill-name>`) when available, then the bare
+> `<skill-name>` form.
+>
+> This name-resolution order only determines which matching skill identity to
+> use; it does not establish an execution priority. Matching execution skills,
+> the current agent's capabilities, and the host framework's native
+> execution/delegation mechanisms are all available execution options.
+>
+> Choose the execution approach based on the actual implementation plan, user
+> instructions, available capabilities, and the host framework's own
+> delegation/routing policy. Do not use subagents merely because they are
+> available, and do not automatically search for or install missing skills.
 
-**1. Subagent-Driven (recommended)** - I dispatch a fresh subagent per task, review between tasks, fast iteration
+After saving the plan, determine the appropriate execution handoff.
 
-**2. Inline Execution** - Execute tasks in this session using executing-plans, batch execution with checkpoints
+### When subagent delegation would materially help
 
-**Which approach?"**
+If the current agent or host framework supports subagents and the actual plan
+would meaningfully benefit from delegation, propose a concrete subagent
+composition based on the work in the plan.
 
-**If Subagent-Driven chosen:**
-- **REQUIRED SUB-SKILL:** Use superpowers:subagent-driven-development
-- Fresh subagent per task + two-stage review
+Do not blindly create one subagent per task.
 
-**If Inline Execution chosen:**
-- **REQUIRED SUB-SKILL:** Use superpowers:executing-plans
-- Batch execution with checkpoints for review
+Group delegation only where it provides a real benefit, such as:
+
+* independent areas of responsibility
+* specialist knowledge
+* independent research
+* genuinely parallelizable work
+* useful context isolation
+
+The proposed roles must come from the actual plan. Do not use a fixed set of
+subagent roles merely as a template.
+
+Then offer the user two choices:
+
+1. **Subagent-assisted execution** — execute the plan using the proposed
+   delegation structure. Use whichever available subagent/delegation
+   mechanism best fits the plan and host framework; an available matching
+   `subagent-driven-development` skill is one such option.
+
+2. **Direct execution** — execute the plan in the current agent/session
+   without imposing a predefined subagent workflow. An available matching
+   `executing-plans` skill may be used when appropriate, but is not required.
+
+### When subagent delegation would not materially help
+
+Do not invent a subagent composition just to provide another option.
+
+Ask the user whether to proceed with direct execution of the implementation
+plan.
+
+<!-- LOCAL OVERRIDE END: optional execution handoff -->
