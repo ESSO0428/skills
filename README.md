@@ -75,6 +75,15 @@ npx skills@latest add esso0428/skills \
 npx skills@latest add esso0428/skills --skill brainstorming
 ```
 
+若想直接使用上游最新版，也可以改以 upstream 套件安裝（裝的是 `obra/superpowers` 當下最新版，而非本 repo 記錄的快照 commit）：
+
+```bash
+npx skills@latest add obra/superpowers \
+  --skill brainstorming \
+  --skill writing-plans \
+  --skill using-git-worktrees
+```
+
 Upstream：[obra/superpowers](https://github.com/obra/superpowers)
 
 Synced from commit: `44c9b2d6e889982ac18c27d05a19fefe335194e1`（含 `LICENSE`、`skills/brainstorming`、`skills/writing-plans`、`skills/using-git-worktrees`）
