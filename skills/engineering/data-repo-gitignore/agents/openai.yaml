@@ -1,0 +1,5 @@
+interface:
+  display_name: "Data Repo Gitignore"
+  short_description: "資料型 repo 的 .gitignore 策略與驗證"
+policy:
+  allow_implicit_invocation: false
