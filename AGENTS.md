@@ -20,8 +20,8 @@ Claude Code marketplace 安裝與 Claude Code 專屬功能，請查看 [CLAUDE.m
 - 若 skill 內含相對路徑範例，必須確認那些連結從範例預期落點出發時仍然有效。
 - 每個 skill 的 `SKILL.md` 都應有 frontmatter。至少包含 `name` 與 `description`；若是 user-invoked，還要加 `disable-model-invocation: true`。
 - `SKILL.md` 的 frontmatter 比照 `mattpocock/skills`：user-invoked 的 `description` 寫成給人讀的一句話摘要；model-invoked 的 `description` 則寫成較偏 trigger / symptom 的使用時機。
-- 目前這個套件中已收錄的 skills 一律先維持為 user-invoked；未來若新增 skill 是否允許自動觸發，再逐一判斷。
-- 每個 skill 都應在自己的目錄下提供 `agents/openai.yaml`，用來放 Codex / OpenAI 端的 `display_name`、`short_description`，以及 user-invoked skill 需要的 `policy.allow_implicit_invocation: false`。
+- 新收錄的 skill 預設為 user-invoked；是否允許自動觸發逐一判斷。目前例外：`data-repo-gitignore` 為 model-invoked（只修改 `.gitignore`、git 只用唯讀指令，誤觸發成本低，而且它要防的正是「忘記檢查」）。
+- 每個 skill 都應在自己的目錄下提供 `agents/openai.yaml`，用來放 Codex / OpenAI 端的 `display_name`、`short_description`，以及 `policy.allow_implicit_invocation`（user-invoked 為 `false`，model-invoked 為 `true`）。
 - 若 `SKILL.md` 是 user-invoked（如 `disable-model-invocation: true`），則 `agents/openai.yaml` 也要同步設 `policy.allow_implicit_invocation: false`；兩邊不可失配。
 - `README.md`、bucket README 與其他 support `.md` 不需要為了模仿結構而額外加 frontmatter；比照 `mattpocock/skills`，主要由 `SKILL.md` 承擔這層 metadata。
 - 命名慣例：repo 用 `skills`，marketplace 用 GitHub owner，plugin 用 `<owner>-skills`。

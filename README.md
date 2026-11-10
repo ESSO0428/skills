@@ -8,6 +8,7 @@
   - [結構](#結構)
   - [內含 skills](#內含-skills)
     - [明確呼叫（User-invoked）](#明確呼叫user-invoked)
+    - [自動觸發（Model-invoked）](#自動觸發model-invoked)
   - [Third-party skill collections](#third-party-skill-collections)
     - [Superpowers](#superpowers)
   - [備註](#備註)
@@ -43,8 +44,13 @@ npx skills@latest add esso0428/skills
 - **[roadmap-track-and-refactor](./skills/engineering/roadmap-track-and-refactor/SKILL.md)** — 把 `ROADMAP.md` 維持成主看板，將深細節移到 `docs/roadmap*` / `docs/reports*`，保留 traceability，並乾淨地歸檔已完成方向。
 - **[executing-roadmap-plan](./skills/engineering/executing-roadmap-plan/SKILL.md)** — 按既有 `ROADMAP.md` 計畫執行，並如實更新 checkbox、report 與 evidence。
 - **[skill-publisher-helper](./skills/engineering/skill-publisher-helper/SKILL.md)** — 把一組 skills 打包成可安裝 repo，或重整既有 skills repo 的入口與結構。
-- **[data-repo-gitignore](./skills/engineering/data-repo-gitignore/SKILL.md)** — 為資料型 / ML repo 規劃 `.gitignore`：資料類目錄各自宣告保留清單、root 用副檔名全域攔截大檔，並以 `git check-ignore` 實測驗證。
 - **[talk-human](./skills/productivity/talk-human/SKILL.md)** — 把技術內容改寫成更精簡、結構更清楚、也更適合人閱讀的說明。
+
+### 自動觸發（Model-invoked）
+
+agent 遇到符合的情境時會自動使用，也可以明確呼叫。
+
+- **[data-repo-gitignore](./skills/engineering/data-repo-gitignore/SKILL.md)** — 為資料型 / ML repo 規劃 `.gitignore`：資料類目錄各自宣告保留清單、root 用副檔名全域攔截大檔，並以 `git check-ignore` 實測驗證。
 
 ## Third-party skill collections
 

@@ -1,7 +1,6 @@
 ---
 name: data-repo-gitignore
-description: 為資料型 / ML repo 規劃與驗證 `.gitignore`：資料類目錄各自宣告保留清單、root 全域副檔名排除，並用 `git check-ignore` 實測。
-disable-model-invocation: true
+description: 資料型 / ML repo 的 .gitignore 策略（資料類目錄各自的 .gitignore + root 全域副檔名排除 + git check-ignore 驗證）。在設定、檢查或修正含有資料、dataset、模型輸出、報表或大型二進位檔的 repo 的 .gitignore 時使用；新增資料目錄或會產出檔案的流程時，或使用者擔心大檔（npz、pt/pkl 模型、圖片、csv/xlsx 表格、VCF 等基因型檔）會被 git 收進去時也使用，即使沒有提到 gitignore。
 ---
 
 # 資料型 repo 的 .gitignore 策略
