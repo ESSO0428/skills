@@ -1,0 +1,5 @@
+interface:
+  display_name: "Acquiring Video Sources"
+  short_description: "頻道 inventory、授權下載、字幕與 AGY fallback 規劃"
+policy:
+  allow_implicit_invocation: false

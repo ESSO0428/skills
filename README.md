@@ -35,6 +35,7 @@ npx skills@latest add esso0428/skills
 
 - [`skills/engineering`](./skills/engineering/README.md) — 放實驗工作流、ROADMAP 維護，以及研究 / 工程整理類 skills
 - [`skills/productivity`](./skills/productivity/README.md) — 放輸出可讀性與較輕量的工作流輔助 skills
+- [`skills/experiment`](./skills/experiment/README.md) — 放實驗性 skills 集合，不保證穩定（目前有 [`yt-channel-distill`](./skills/experiment/yt-channel-distill/README.md)：YouTube 頻道蒸餾前處理，需安裝整個集合）
 - [`skills/collection`](./skills/collection/) — 收錄其他作者 / 其他專案的第三方 skills，每個來源放在一個子目錄，原則上保持 upstream；若 curated subset 需要極小的 compatibility adjustment，會在對應 skill 與 README 中明確標示（目前有 [`superpowers/`](./skills/collection/superpowers/)）
 
 ## 內含 skills
@@ -45,6 +46,11 @@ npx skills@latest add esso0428/skills
 - **[executing-roadmap-plan](./skills/engineering/executing-roadmap-plan/SKILL.md)** — 按既有 `ROADMAP.md` 計畫執行，並如實更新 checkbox、report 與 evidence。
 - **[skill-publisher-helper](./skills/engineering/skill-publisher-helper/SKILL.md)** — 把一組 skills 打包成可安裝 repo，或重整既有 skills repo 的入口與結構。
 - **[talk-human](./skills/productivity/talk-human/SKILL.md)** — 把技術內容改寫成更精簡、結構更清楚、也更適合人閱讀的說明。
+- **[distilling-youtube-channel](./skills/experiment/yt-channel-distill/skills/distilling-youtube-channel/SKILL.md)** — 入口：把 YouTube 頻道從 inventory 一路帶到有 provenance 的蒸餾前證據。（實驗性）
+- **[acquiring-video-sources](./skills/experiment/yt-channel-distill/skills/acquiring-video-sources/SKILL.md)** — 建立頻道 inventory、收集字幕、下載已授權影片，並規劃失敗項目的 AGY fallback。（實驗性）
+- **[recovering-asr](./skills/experiment/yt-channel-distill/skills/recovering-asr/SKILL.md)** — 對沒有可用字幕的已驗證本機影片執行可續跑的本機 ASR。（實驗性）
+- **[supplementing-asr-gaps](./skills/experiment/yt-channel-distill/skills/supplementing-asr-gaps/SKILL.md)** — 用 AGY 對 ASR 明確缺口補一個 bounded evidence packet。（實驗性）
+- **[llm-wiki](./skills/experiment/yt-channel-distill/skills/llm-wiki/SKILL.md)** — 把已驗證來源編譯成可重建、保留 provenance 的 Markdown Wiki。（實驗性）
 
 ### 自動觸發（Model-invoked）
 
@@ -111,5 +117,6 @@ Synced from commit: `44c9b2d6e889982ac18c27d05a19fefe335194e1`（含 `LICENSE`�
 
 - `roadmap-track-and-refactor` 與 `skill-publisher-helper` 都是較完整的 workflow skills，內含 reference 檔與固定整理方法。
 - `executing-roadmap-plan` 則是刻意保持精簡的 execution skill，用來補強 ROADMAP 執行時的 checkbox / report 紀律。
+- `experiment/` 下的 `yt-channel-distill` 是實驗性集合，目前只在單一頻道上實測，AGY 與本機 ASR 分支綁定作者環境；五個 skills 需整個集合一起安裝。
 - `talk-human` 也刻意保持很小，方便和其他 skills 組合使用。
 - 若這個套件之後繼續擴充，頂層 `README.md` 應維持簡短，把細節往 bucket README、skill 自己的文件，或正式發佈設定下放。

@@ -1,0 +1,55 @@
+{
+  "_comment": "Example title rules for an ML-course channel. Copy to <workspace>/config/topic-rules.json and edit.",
+  "topic_rules": [
+    [
+      "optimization",
+      "P0",
+      "訓練不起來|局部最小|鞍點|梯度|gradient|learning rate|學習速率|批次|動量|momentum|optimizer|adam|backpropagation"
+    ],
+    [
+      "generalization",
+      "P0",
+      "overfit|過度擬合|underfit|欠擬合|泛化|generalization|bias.?variance|model capacity|模型容量|regulariz|正則化"
+    ],
+    [
+      "evaluation",
+      "P0",
+      "validation|驗證|評估|evaluation|\\bmetric\\b|指標|train.?test|訓練.?測試|error analysis|誤差分析"
+    ],
+    [
+      "loss-functions",
+      "P0",
+      "loss function|損失函數|交叉熵|cross.entropy"
+    ],
+    [
+      "ml-fundamentals",
+      "P0",
+      "機器學習任務攻略|深度學習基本概念|機器學習基本概念|machine learning fundamentals|introduction of (machine|deep) learning|where does the error come from"
+    ],
+    [
+      "architecture",
+      "P1",
+      "self.attention|自注意力|transformer|\\bcnn\\b|卷積神經網路|\\brnn\\b|\\bbert\\b|representation learning"
+    ],
+    [
+      "advanced-methods",
+      "P2",
+      "\\bgan\\b|\\bvae\\b|diffusion|generative|生成式|生成模型|生成器|reinforcement learning|強化學習|\\bllm\\b|大型語言模型|meta.learning|\\basr\\b|speech recognition|語音辨識|ai agent"
+    ]
+  ],
+  "core_explicit_rules": [
+    [
+      "training-diagnosis",
+      "roadmap of improving model|what to do if my network fails to train"
+    ],
+    [
+      "optimization",
+      "what to do when optimization fails"
+    ],
+    [
+      "ml-fundamentals",
+      "快速了解機器學習基本原理"
+    ]
+  ],
+  "specialized_context": "\\bgan\\b|\\bvae\\b|diffusion|generative|生成式|生成模型|生成器|reinforcement learning|強化學習|\\bpolicy gradient\\b|\\bdrl\\b|\\bllm\\b|大型語言模型|meta.learning|\\basr\\b|speech recognition|語音辨識|ai agent"
+}

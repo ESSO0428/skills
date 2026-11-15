@@ -6,6 +6,7 @@ Claude Code marketplace 安裝與 Claude Code 專屬功能，請查看 [CLAUDE.m
 
 - `engineering/` — 研究與工程工作流 skills
 - `productivity/` — 溝通與輕量工作流輔助 skills
+- `experiment/` — 實驗性 skills 集合（不保證穩定，可能搬出或刪除）
 
 維護規則：
 

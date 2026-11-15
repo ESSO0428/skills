@@ -1,0 +1,5 @@
+interface:
+  display_name: "Distilling a YouTube Channel"
+  short_description: "YouTube 頻道從 inventory 到蒸餾前證據的完整流程"
+policy:
+  allow_implicit_invocation: false
