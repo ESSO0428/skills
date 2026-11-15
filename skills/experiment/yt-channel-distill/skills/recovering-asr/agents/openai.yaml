@@ -1,0 +1,5 @@
+interface:
+  display_name: "Recovering ASR"
+  short_description: "對無字幕的已驗證本機影片執行可續跑的 ASR"
+policy:
+  allow_implicit_invocation: false

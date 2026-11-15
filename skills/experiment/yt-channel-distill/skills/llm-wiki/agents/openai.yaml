@@ -1,0 +1,5 @@
+interface:
+  display_name: "LLM Wiki"
+  short_description: "把已驗證來源編譯成可重建、保留 provenance 的 Markdown Wiki"
+policy:
+  allow_implicit_invocation: false

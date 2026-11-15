@@ -1,13 +1,18 @@
 {
   "name": "esso0428-skills",
-  "version": "0.1.1",
-  "description": "研究與工程工作流的 skills 套件，包含 ROADMAP/docs 分層整理、ROADMAP 計畫執行、skills repo 打包、資料型 repo 的 .gitignore 策略，以及 human-readable 改寫。",
+  "version": "0.2.0",
+  "description": "研究與工程工作流的 skills 套件，包含 ROADMAP/docs 分層整理、ROADMAP 計畫執行、skills repo 打包、資料型 repo 的 .gitignore 策略，以及 human-readable 改寫，並含實驗性的 YouTube 頻道蒸餾前處理集合（yt-channel-distill）。",
   "skills": [
     "./skills/engineering/roadmap-track-and-refactor",
     "./skills/engineering/executing-roadmap-plan",
     "./skills/engineering/skill-publisher-helper",
     "./skills/engineering/data-repo-gitignore",
-    "./skills/productivity/talk-human"
+    "./skills/productivity/talk-human",
+    "./skills/experiment/yt-channel-distill/skills/distilling-youtube-channel",
+    "./skills/experiment/yt-channel-distill/skills/acquiring-video-sources",
+    "./skills/experiment/yt-channel-distill/skills/recovering-asr",
+    "./skills/experiment/yt-channel-distill/skills/supplementing-asr-gaps",
+    "./skills/experiment/yt-channel-distill/skills/llm-wiki"
   ],
   "keywords": [
     "skills",
@@ -18,6 +23,10 @@
     "documentation",
     "productivity",
     "packaging",
-    "gitignore"
+    "gitignore",
+    "youtube",
+    "distillation",
+    "asr",
+    "experimental"
   ]
 }

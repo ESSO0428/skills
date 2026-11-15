@@ -1,0 +1,5 @@
+interface:
+  display_name: "Supplementing ASR Gaps"
+  short_description: "用 AGY 補 ASR 缺口的 bounded evidence packet"
+policy:
+  allow_implicit_invocation: false
