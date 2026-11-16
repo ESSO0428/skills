@@ -7,7 +7,7 @@
 
 ## 內含 skills
 
-五個 skills 全部是 user-invoked（明確呼叫才使用），因為下載、長時間 ASR、AGY 配額與磁碟寫入的誤觸成本高。
+入口 [`yt-channel-distill`](./SKILL.md) 加上五個 skills，全部是 user-invoked（明確呼叫才使用），因為下載、長時間 ASR、AGY 配額與磁碟寫入的誤觸成本高。
 
 - **[distilling-youtube-channel](./skills/distilling-youtube-channel/SKILL.md)** — 入口：8 個階段，從頻道 inventory 到證據與 coverage。
 - **[acquiring-video-sources](./skills/acquiring-video-sources/SKILL.md)** — inventory、授權下載與 `ffprobe` 驗證、字幕、AGY fallback 規劃。
@@ -17,17 +17,41 @@
 
 規則集中在 [`RULES.md`](./RULES.md)（授權、磁碟、AGY、ASR 停止門檻、provenance），細節在 [`docs/`](./docs/)。
 
-## 安裝
+## 透過 skills.sh 安裝
 
-安裝**整個集合**；只裝單一 skill 不能執行，因為 skills 的腳本 import 集合根 `src/channel_distill/` 的 Python 套件，並互相引用 `RULES.md`、`docs/` 與 `llm-wiki` 的腳本。
+安裝**整個集合**（入口 skill `yt-channel-distill`）；只裝底下單一 skill 不能執行，因為腳本 import 集合根 `src/channel_distill/` 的 Python 套件，並引用 `RULES.md`、`docs/` 與 `llm-wiki` 的腳本。
+
+裝在處理頻道資料的專案裡（建議）：
 
 ```bash
-npx skills@latest add esso0428/skills        # 或 Claude plugin：/plugin install esso0428-skills@esso0428
-cd <集合根>                                   # 含 pyproject.toml 的 skills/experiment/yt-channel-distill
-uv run --extra dev pytest tests -q            # 可選：確認環境
+cd <你的工作專案>
+npx skills add ESSO0428/skills -s yt-channel-distill
 ```
 
-SKILL.md 內的指令都寫成 `uv run --project <collection-root> python ...`，`<collection-root>` 即本目錄。
+或全域安裝，在 `add` 後面加 `-g`。專案安裝會產生 `skills-lock.json`，建議追蹤它、不追蹤 `.agents/`；換機器時用 `npx skills experimental_install` 還原。
+
+已經裝過舊版的話：
+
+```bash
+npx skills update yt-channel-distill -y        # 全域安裝加 -g
+```
+
+## 建立 uv 環境（第一次）
+
+`<集合目錄>`：專案安裝在 `<你的工作專案>/.agents/skills/yt-channel-distill`，全域安裝在 `~/.agents/skills/yt-channel-distill`。
+
+```bash
+uv sync --project <集合目錄>                 # 基本功能
+uv sync --project <集合目錄> --extra asr     # 要跑本機 ASR 時（faster-whisper）
+```
+
+之後一律用 `uv run --project <集合目錄> python -m channel_distill ... --workspace <工作區>`；SKILL.md 內的 `<collection-root>` 即 `<集合目錄>`。
+
+確認環境（離線，不連網）：
+
+```bash
+uv run --project <集合目錄> --extra dev pytest <集合目錄>/tests -q -p no:cacheprovider
+```
 
 ## 外部工具
 

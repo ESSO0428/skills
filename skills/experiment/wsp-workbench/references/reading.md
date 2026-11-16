@@ -2,7 +2,7 @@
 
 目標：說明權重「支持」什麼結構或任務。報告寫「權重支持 X」，不寫「模型做 X」。
 
-1. **Inventory**：`uv run python scripts/wsp_inspect.py inventory model.pt`，得到名稱、shape、dtype、數量與每個 tensor 的 sha256。
+1. **Inventory**：`uv run --project <root> python <root>/scripts/wsp_inspect.py inventory model.pt`，得到名稱、shape、dtype、數量與每個 tensor 的 sha256。
 2. **結構統計**：`stats` 看範數、奇異值譜、effective rank、近零與 dead 單元；`cosine --pattern <輸出層>` 看輸出層 row 兩兩相似度（易混淆類別的候選）。大 tensor 用 `dump --max-chars` 取有限的整數文字，不全量貼入。
 3. **先寫信念檔**：任何 probe 之前，寫下假設與可證偽的預測（檔案存在才能事後對照）。
 4. **必做對照**：

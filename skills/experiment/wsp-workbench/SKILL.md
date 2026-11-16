@@ -68,7 +68,7 @@ Windows 原生，只需要 PyTorch（`.safetensors` 另加 `--extra safetensors`
 **執行工具**：`<root>` 是含 `pyproject.toml` 的 skill 根目錄（即本目錄）。
 - 有 `uv.lock`，或 `pyproject.toml` 含 `[project]`：`uv run --project <root> python <腳本>`（首次自動建 `.venv`）。
 - 沒有 uv 但有 `<root>/.venv`：直接用 `<root>/.venv/Scripts/python`（Windows）或 `<root>/.venv/bin/python`。
-- 都沒有：照 README 安裝；缺套件就回報安裝指令，不改用其他環境。
+- 都沒有：照 [README](./README.md) 安裝；缺套件就回報安裝指令，不改用其他環境。
 - 需要 torch 時第一次先 `uv sync --project <root> --extra cpu`；有 NVIDIA GPU 改用 `cu126`（舊驅動）或 `cu132`（`nvidia-smi` 的 CUDA Version ≥ 13.2）。
 
 | 檔案 | 用途 |
@@ -79,7 +79,7 @@ Windows 原生，只需要 PyTorch（`.safetensors` 另加 `--extra safetensors`
 | [scripts/wsp_controls.py](./scripts/wsp_controls.py) | `matched_random_direction`、`shuffled_copy`、`permute_outputs` |
 | [scripts/wsp_compare.py](./scripts/wsp_compare.py) | `paired_counts`、`sign_test_p`、`gate`、`per_class_deltas` |
 
-範例：`uv run python scripts/wsp_inspect.py stats model.pt --pattern "fc|head"`。完整流程見 [test_end_to_end.py](./tests/test_end_to_end.py) 與 [test_methods.py](./tests/test_methods.py)；跑測試：`uv run --extra dev pytest -q -p no:cacheprovider`。載入權重只用 `torch.load(weights_only=True)`。
+範例：`uv run --project <root> python <root>/scripts/wsp_inspect.py stats model.pt --pattern "fc|head"`。完整流程見 [test_end_to_end.py](./tests/test_end_to_end.py) 與 [test_methods.py](./tests/test_methods.py)；跑測試：`uv run --project <root> --extra dev pytest <root>/tests -q -p no:cacheprovider`。載入權重只用 `torch.load(weights_only=True)`。
 
 ## 誠實規則
 
