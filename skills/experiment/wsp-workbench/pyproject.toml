@@ -3,14 +3,40 @@ name = "wsp-workbench"
 version = "0.1.0"
 description = "Weight-space programming workbench: gated, ledgered, non-optimising weight edits for PyTorch models."
 requires-python = ">=3.11"
-dependencies = ["torch"]
+dependencies = []
 
 [project.optional-dependencies]
+cpu = ["torch"]
+cu126 = ["torch"]
+cu132 = ["torch"]
 safetensors = ["safetensors"]
 dev = ["pytest"]
 
 [tool.uv]
 package = false
+conflicts = [[{ extra = "cpu" }, { extra = "cu126" }, { extra = "cu132" }]]
+
+[tool.uv.sources]
+torch = [
+  { index = "pytorch-cpu", extra = "cpu" },
+  { index = "pytorch-cu126", extra = "cu126" },
+  { index = "pytorch-cu132", extra = "cu132" },
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+[[tool.uv.index]]
+name = "pytorch-cu132"
+url = "https://download.pytorch.org/whl/cu132"
+explicit = true
 
 [tool.pytest.ini_options]
 pythonpath = ["scripts"]

@@ -18,4 +18,9 @@ disable-model-invocation: true
 | 只補 `ASR_SEGMENT_UNAVAILABLE`／`READY_PARTIAL` 的局部缺口 | [`supplementing-asr-gaps`](skills/supplementing-asr-gaps/SKILL.md) |
 | 把已驗證來源編成可重建的 Wiki | [`llm-wiki`](skills/llm-wiki/SKILL.md) |
 
-Python 指令一律用 `uv run --project <本目錄> ...`；工作區用 `--workspace` 或 `$YTD_WORKSPACE` 指定。
+**執行工具**：`<root>` 是含 `pyproject.toml` 的 skill 根目錄（即本目錄）。
+- 有 `uv.lock`，或 `pyproject.toml` 含 `[project]`：`uv run --project <root> python <腳本>`（首次自動建 `.venv`）。
+- 沒有 uv 但有 `<root>/.venv`：直接用 `<root>/.venv/Scripts/python`（Windows）或 `<root>/.venv/bin/python`。
+- 都沒有：照 README 安裝；缺套件就回報安裝指令，不改用其他環境。
+
+工作區用 `--workspace` 或 `$YTD_WORKSPACE` 指定。
