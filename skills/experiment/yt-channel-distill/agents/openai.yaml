@@ -1,0 +1,5 @@
+interface:
+  display_name: "YT Channel Distill"
+  short_description: "YouTube 頻道蒸餾前處理集合入口"
+policy:
+  allow_implicit_invocation: false

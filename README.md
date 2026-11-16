@@ -46,6 +46,7 @@ npx skills@latest add esso0428/skills
 - **[executing-roadmap-plan](./skills/engineering/executing-roadmap-plan/SKILL.md)** — 按既有 `ROADMAP.md` 計畫執行，並如實更新 checkbox、report 與 evidence。
 - **[skill-publisher-helper](./skills/engineering/skill-publisher-helper/SKILL.md)** — 把一組 skills 打包成可安裝 repo，或重整既有 skills repo 的入口與結構。
 - **[talk-human](./skills/productivity/talk-human/SKILL.md)** — 把技術內容改寫成更精簡、結構更清楚、也更適合人閱讀的說明。
+- **[yt-channel-distill](./skills/experiment/yt-channel-distill/SKILL.md)** — 實驗性的 YouTube 頻道蒸餾前處理集合入口；安裝整個集合用這個。
 - **[distilling-youtube-channel](./skills/experiment/yt-channel-distill/skills/distilling-youtube-channel/SKILL.md)** — 入口：把 YouTube 頻道從 inventory 一路帶到有 provenance 的蒸餾前證據。（實驗性）
 - **[acquiring-video-sources](./skills/experiment/yt-channel-distill/skills/acquiring-video-sources/SKILL.md)** — 建立頻道 inventory、收集字幕、下載已授權影片，並規劃失敗項目的 AGY fallback。（實驗性）
 - **[recovering-asr](./skills/experiment/yt-channel-distill/skills/recovering-asr/SKILL.md)** — 對沒有可用字幕的已驗證本機影片執行可續跑的本機 ASR。（實驗性）

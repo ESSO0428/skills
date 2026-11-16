@@ -6,6 +6,7 @@
 
 只能在明確呼叫時使用。
 
+- **[yt-channel-distill](./yt-channel-distill/SKILL.md)** — 集合入口（安裝用這個）：依階段分流到下列 skill。安裝：`npx skills add ESSO0428/skills -s yt-channel-distill`。
 - **[distilling-youtube-channel](./yt-channel-distill/skills/distilling-youtube-channel/SKILL.md)** — 入口：把 YouTube 頻道從 inventory 一路帶到有 provenance 的蒸餾前證據。
 - **[acquiring-video-sources](./yt-channel-distill/skills/acquiring-video-sources/SKILL.md)** — 建立頻道 inventory、收集字幕、下載已授權影片，並規劃失敗項目的 AGY fallback。
 - **[recovering-asr](./yt-channel-distill/skills/recovering-asr/SKILL.md)** — 對沒有可用字幕的已驗證本機影片執行可續跑的本機 ASR。
