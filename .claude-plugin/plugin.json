@@ -12,7 +12,8 @@
     "./skills/experiment/yt-channel-distill/skills/acquiring-video-sources",
     "./skills/experiment/yt-channel-distill/skills/recovering-asr",
     "./skills/experiment/yt-channel-distill/skills/supplementing-asr-gaps",
-    "./skills/experiment/yt-channel-distill/skills/llm-wiki"
+    "./skills/experiment/yt-channel-distill/skills/llm-wiki",
+    "./skills/experiment/wsp-workbench"
   ],
   "keywords": [
     "skills",
@@ -27,6 +28,7 @@
     "youtube",
     "distillation",
     "asr",
+    "weight-space-programming",
     "experimental"
   ]
 }

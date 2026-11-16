@@ -52,6 +52,7 @@ npx skills@latest add esso0428/skills
 - **[recovering-asr](./skills/experiment/yt-channel-distill/skills/recovering-asr/SKILL.md)** — 對沒有可用字幕的已驗證本機影片執行可續跑的本機 ASR。（實驗性）
 - **[supplementing-asr-gaps](./skills/experiment/yt-channel-distill/skills/supplementing-asr-gaps/SKILL.md)** — 用 AGY 對 ASR 明確缺口補一個 bounded evidence packet。（實驗性）
 - **[llm-wiki](./skills/experiment/yt-channel-distill/skills/llm-wiki/SKILL.md)** — 把已驗證來源編譯成可重建、保留 provenance 的 Markdown Wiki。（實驗性）
+- **[wsp-workbench](./skills/experiment/wsp-workbench/SKILL.md)** — 以推理（不訓練）讀取、診斷並編輯 PyTorch 模型權重，附 edit gate、ledger、undo 與 forward budget。（實驗性）
 
 ### 自動觸發（Model-invoked）
 
