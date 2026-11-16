@@ -1,0 +1,5 @@
+interface:
+  display_name: "WSP Workbench"
+  short_description: "以推理（不訓練）讀取與編輯 PyTorch 權重的實驗工作台"
+policy:
+  allow_implicit_invocation: false
