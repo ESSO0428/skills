@@ -73,7 +73,7 @@ def filter_normalized_direction(params, seed: int) -> list[torch.Tensor]:
         if p.ndim < 2:
             out.append(torch.zeros_like(p))
             continue
-        d = torch.randn(p.shape, generator=g, dtype=p.dtype)
+        d = torch.randn(p.shape, generator=g, dtype=p.dtype).to(p.device)  # CPU generator, then model device
         w = p.detach().reshape(p.shape[0], -1)
         dn = d.reshape(p.shape[0], -1)
         dn = dn / (dn.norm(dim=1, keepdim=True) + 1e-10) * w.norm(dim=1, keepdim=True)
@@ -130,7 +130,7 @@ def local_geometry(session, loss_fn, batches, iters=20, grad_tol=1e-2, eig_tol=1
                 return _flat(hv).detach()
 
             gen = torch.Generator().manual_seed(seed)
-            v = torch.randn(g.numel(), generator=gen, dtype=g.dtype)
+            v = torch.randn(g.numel(), generator=gen, dtype=g.dtype).to(g.device)
             v = v / v.norm()
             rho = 0.0
             for _ in range(5):  # crude spectral radius, for a shift that makes the top end dominant
@@ -143,13 +143,13 @@ def local_geometry(session, loss_fn, batches, iters=20, grad_tol=1e-2, eig_tol=1
                 lam_max = lam_min = 0.0
             else:
                 shift = 1.5 * rho
-                v = torch.randn(g.numel(), generator=gen, dtype=g.dtype)
+                v = torch.randn(g.numel(), generator=gen, dtype=g.dtype).to(g.device)
                 v = v / v.norm()
                 for _ in range(iters):
                     w = hvp(v) + shift * v
                     v = w / w.norm()
                 lam_max = float(v @ hvp(v))
-                u = torch.randn(g.numel(), generator=gen, dtype=g.dtype)
+                u = torch.randn(g.numel(), generator=gen, dtype=g.dtype).to(g.device)
                 u = u / u.norm()
                 for _ in range(iters):
                     w = lam_max * u - hvp(u)

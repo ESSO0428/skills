@@ -151,6 +151,28 @@ def test_l3_refusal_budget_and_weights_unchanged(trained):
     assert sess._hashes() == before
 
 
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="needs CUDA")
+def test_cuda_model_matches_cpu(trained):
+    """Random directions come from a CPU generator; they must move to the model's device."""
+    import copy
+
+    model, batches = trained
+    cuda_model = copy.deepcopy(model).cuda()
+    cuda_batches = [(x.cuda(), y.cuda()) for x, y in batches]
+
+    cpu_g = local_geometry(WeightSession(model, POLICY, access_level="L3", grad_budget=46), CE, batches)
+    gpu_sess = WeightSession(cuda_model, POLICY, access_level="L3", grad_budget=46)
+    before = gpu_sess._hashes()
+    gpu_g = local_geometry(gpu_sess, CE, cuda_batches)
+    assert gpu_sess._hashes() == before
+    for k in ("grad_norm", "lambda_max", "lambda_min"):
+        assert gpu_g[k] == pytest.approx(cpu_g[k], rel=1e-3, abs=1e-5)
+
+    cpu_s = landscape_slice(WeightSession(model, POLICY, access_level="L2", budget=9), CE, batches, 9, seed=3)
+    gpu_s = landscape_slice(WeightSession(cuda_model, POLICY, access_level="L2", budget=9), CE, cuda_batches, 9, seed=3)
+    assert gpu_s["losses"] == pytest.approx(cpu_s["losses"], rel=1e-4, abs=1e-6)
+
+
 def test_agent_code_still_cannot_use_autograd():
     from wsp_session import ForbiddenCode
 
