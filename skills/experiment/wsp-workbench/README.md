@@ -29,19 +29,20 @@ npx skills update wsp-workbench -y        # 全域安裝加 -g
 
 ## 建立 uv 環境（第一次）
 
-安裝只會複製檔案。到 skill 的安裝目錄建一次環境，並依機器選一種 PyTorch：
+安裝只會複製檔案。不帶參數的 `uv sync` 或第一次 `uv run` 會從 PyPI 裝 torch：Linux 上這就是 CUDA 版，可以直接用 GPU；Windows 上是 CPU 版。需要指定版本時，第一次改用：
 
 | 機器 | 指令 |
 |---|---|
-| 沒有 NVIDIA 顯示卡 | `uv sync --project <skill 目錄> --extra cpu` |
-| NVIDIA，`nvidia-smi` 的 CUDA Version ≥ 13.2 | `uv sync --project <skill 目錄> --extra cu132` |
-| NVIDIA，較舊的驅動 | `uv sync --project <skill 目錄> --extra cu126` |
+| Linux，有 NVIDIA 顯示卡 | 不用指定（PyPI 版已含 CUDA） |
+| Windows，NVIDIA，`nvidia-smi` 的 CUDA Version ≥ 13.2 | `uv sync --project <skill 目錄> --extra cu132` |
+| Windows，NVIDIA，較舊的驅動 | `uv sync --project <skill 目錄> --extra cu126` |
+| 沒有 NVIDIA 顯示卡，想要較小的安裝 | `uv sync --project <skill 目錄> --extra cpu` |
 
 `<skill 目錄>`：專案安裝在 `<你的專案>/.agents/skills/wsp-workbench`，全域安裝在 `~/.agents/skills/wsp-workbench`。要讀 `.safetensors` 再加 `--extra safetensors`。
 
 之後一律用 `uv run --project <skill 目錄> python <腳本>`，**不要**再帶 `--extra cpu` 之類的參數，否則 uv 會把已裝的 GPU 版換掉。
 
-確認環境（約 15 秒，30 個測試）：
+確認環境（約 15 秒；沒有 GPU 時 CUDA 測試會略過）：
 
 ```bash
 uv run --project <skill 目錄> --extra dev pytest <skill 目錄>/tests -q -p no:cacheprovider

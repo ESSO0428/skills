@@ -227,7 +227,7 @@ class WeightSession:
         """
         W = self.param(name)
         W2 = W.reshape(W.shape[0], -1).float()
-        u = torch.as_tensor(u, dtype=torch.float32).flatten()
+        u = torch.as_tensor(u, dtype=torch.float32).to(W2.device).flatten()
         if u.numel() != W2.shape[0]:
             raise PolicyViolation(f"{name}: u has {u.numel()} entries, expected {W2.shape[0]}")
         if not torch.isfinite(u).all() or u.norm() == 0:
@@ -243,8 +243,8 @@ class WeightSession:
         """W' = W + scale * a b^T, with a over rows and b over (flattened) columns."""
         W = self.param(name)
         W2 = W.reshape(W.shape[0], -1).float()
-        a = torch.as_tensor(a, dtype=torch.float32).flatten()
-        b = torch.as_tensor(b, dtype=torch.float32).flatten()
+        a = torch.as_tensor(a, dtype=torch.float32).to(W2.device).flatten()
+        b = torch.as_tensor(b, dtype=torch.float32).to(W2.device).flatten()
         if a.numel() != W2.shape[0] or b.numel() != W2.shape[1]:
             raise PolicyViolation(f"{name}: a/b sizes do not match {tuple(W2.shape)}")
         new = (W2 + scale * torch.outer(a, b)).reshape(W.shape)
@@ -254,8 +254,8 @@ class WeightSession:
         """Set entries at flat indices to given values."""
         W = self.param(name)
         flat = W.reshape(-1).clone()
-        idx = torch.as_tensor(flat_index, dtype=torch.long).flatten()
-        vals = torch.as_tensor(values, dtype=flat.dtype).flatten()
+        idx = torch.as_tensor(flat_index, dtype=torch.long).to(flat.device).flatten()
+        vals = torch.as_tensor(values, dtype=flat.dtype).to(flat.device).flatten()
         if idx.numel() != vals.numel():
             raise PolicyViolation("index and values differ in length")
         if idx.numel() and (idx.min() < 0 or idx.max() >= flat.numel()):

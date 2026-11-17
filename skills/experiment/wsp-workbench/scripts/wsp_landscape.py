@@ -46,7 +46,7 @@ def landscape_path(session, state_a, state_b, loss_fn, batches, n_points=21, mon
     with session.scratch():
         for t in ts.tolist():
             mixed = {
-                k: ((1 - t) * state_a[k].float() + t * state_b[k].float()).to(state_a[k].dtype)
+                k: ((1 - t) * state_a[k].float() + t * state_b[k].float().to(state_a[k].device)).to(state_a[k].dtype)
                 if state_a[k].is_floating_point()
                 else state_a[k]
                 for k in state_a

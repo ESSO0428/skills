@@ -7,7 +7,7 @@ import torch
 def matched_random_direction(v: torch.Tensor, seed: int = 0) -> torch.Tensor:
     """Random direction with the same shape and L2 norm as v."""
     g = torch.Generator().manual_seed(seed)
-    r = torch.randn(v.shape, generator=g, dtype=torch.float32)
+    r = torch.randn(v.shape, generator=g, dtype=torch.float32).to(v.device)  # CPU generator, then v's device
     return r / r.norm() * v.float().norm()
 
 

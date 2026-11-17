@@ -19,8 +19,9 @@ from wsp_session import WeightSession  # noqa: E402
 # ---- rank-one key/value edit (ROME-style least squares) -------------------
 def rank_one_vectors(W, k, v_target, C=None):
     """Return (a, b) with W' = W + a bᵀ, the minimal change (w.r.t. key covariance C) giving W' k = v."""
-    W, k, v = W.double(), k.double().flatten(), v_target.double().flatten()
-    ck = k if C is None else torch.linalg.solve(C.double(), k)
+    W = W.double()
+    k, v = k.double().to(W.device).flatten(), v_target.double().to(W.device).flatten()
+    ck = k if C is None else torch.linalg.solve(C.double().to(W.device), k)
     return v - W @ k, ck / (ck @ k)
 
 
@@ -61,16 +62,17 @@ def leace_fit(X, Z, eps: float = 1e-8) -> dict:
 def apply_eraser(x, eraser):
     """r(x) = x - W⁺ P W (x - mu) for x of shape (n, d)."""
     x = x.double()
-    return x - (x - eraser["mean"]) @ eraser["E"].T
+    E, mu = eraser["E"].to(x.device), eraser["mean"].to(x.device)
+    return x - (x - mu) @ E.T
 
 
 def fold_eraser_into_next_linear(W_next, b_next, eraser):
     """Return (W_next (I - E), b_next + W_next E mu) with E = W⁺ P W, so that
     W_next r(x) + b_next == W_new x + b_new."""
-    E, mu = eraser["E"], eraser["mean"]
     W = W_next.double()
-    b = torch.zeros(W.shape[0], dtype=torch.float64) if b_next is None else b_next.double()
-    I = torch.eye(E.shape[0], dtype=torch.float64)
+    E, mu = eraser["E"].to(W.device), eraser["mean"].to(W.device)
+    b = torch.zeros(W.shape[0], dtype=torch.float64, device=W.device) if b_next is None else b_next.double()
+    I = torch.eye(E.shape[0], dtype=torch.float64, device=W.device)
     return (W @ (I - E)).to(W_next.dtype), (b + W @ E @ mu).to(W_next.dtype)
 
 
@@ -119,7 +121,7 @@ def apply_task_vector(session: WeightSession, tau, lam: float, note="") -> list[
     ids = []
     for name, t in tau.items():
         cur = session.param(name)
-        new = (cur.float() + lam * t).to(cur.dtype)
+        new = (cur.float() + lam * t.to(cur.device)).to(cur.dtype)
         ids.append(
             session.assign(name, torch.arange(cur.numel()), new.flatten(), note=note or f"task vector lam={lam}")
         )
