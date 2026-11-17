@@ -73,7 +73,7 @@ Windows 原生，只需要 PyTorch（`.safetensors` 另加 `--extra safetensors`
 - 有 `uv.lock`，或 `pyproject.toml` 含 `[project]`：`uv run --project <root> python <腳本>`（首次自動建 `.venv`）。
 - 沒有 uv 但有 `<root>/.venv`：直接用 `<root>/.venv/Scripts/python`（Windows）或 `<root>/.venv/bin/python`。
 - 都沒有：照 [README](./README.md) 安裝；缺套件就回報安裝指令，不改用其他環境。
-- torch 預設從 PyPI 安裝（Linux 為 CUDA 13 版，Windows 為 CPU 版）；第一次依 `nvidia-smi` 的 CUDA Version 改用 `uv sync --project <root> --extra cu132`（≥ 13.2）或 `--extra cu126`（12.x）。
+- torch 不在預設依賴：第一次依 `nvidia-smi` 的 CUDA Version 執行 `uv sync --project <root> --extra cu132`（≥ 13.2）、`--extra cu126`（12.x）或 `--extra cpu`（無 GPU）；之後的 `uv run` 不要再帶這三個參數。
 
 | 檔案 | 用途 |
 |---|---|
