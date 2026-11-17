@@ -14,7 +14,7 @@ Weight-space programming（WSP）：agent 讀取模型權重、以推理算出�
 
 編輯量由推理與閉式計算得出。WSP session 內禁止：訓練迴圈、`.backward()`、`torch.autograd.grad`、`torch.optim`、`requires_grad_(True)`。
 
-- 執行 agent 寫的程式前先用 `check_agent_code(source)`；發現上述用法就丟 `ForbiddenCode`。
+- 執行 agent 寫的程式前先用 `check_agent_code(source)`；發現上述用法就丟 `ForbiddenCode`。唯一例外是 L3：只有受信任的 `wsp_landscape` 函式可為「量測」算梯度，絕不更新權重。
 - 梯度訓練的 baseline（fine-tuning，或產生 task vector 的微調）只能在 session **之外**跑，並標示「gradient baseline」。
 - 編輯是訓練的補充：證據顯示能移除障礙、修正有目標的錯誤，沒有顯示能新增缺少的能力。
 
@@ -25,8 +25,9 @@ Weight-space programming（WSP）：agent 讀取模型權重、以推理算出�
 | L0 | 權重以文字給出，沒有工具 |
 | L1 | 用程式讀權重（統計、線性代數），**不執行**網路 |
 | L2 | L1 加上有上限的 forward pass（hook 取 activation、activation patching）；預算用完 session 就拒絕 |
+| L3 | L2 加上梯度與 Hessian-vector product，**只做量測**；須明確 `WeightSession(access_level="L3", grad_budget=N)`，每次量測扣預算並驗證權重 hash 不變 |
 
-`WeightSession` 只接受 L1 / L2。
+`WeightSession` 接受 L1 / L2 / L3。L3 結果標 L3，不與 L1 / L2 混算。
 
 ## Workflow
 
@@ -35,6 +36,8 @@ Weight-space programming（WSP）：agent 讀取模型權重、以推理算出�
 **B. Weight Intervention**（[intervention.md](./references/intervention.md)）：先書面固定目標、metric、切分、預算、門檻 → **定位**（`localize_by_patching`、輸出層 row cosine）→ **選 A 級（同儕審查）方法** → 建立編輯 → **gate**（含 norm-matched 隨機對照）→ held-out 只看一次，報 efficacy / generalisation / specificity → **保留或 `undo`**（`assert_baseline()`）。
 
 **C. Weight Programming**（[programming.md](./references/programming.md)）：從 spec 起手、權重全 0；用推理構造；依 spec 做 unit test；與簡單 baseline 比；每版記 hash。
+
+**D. 地形與可達性**（[landscape.md](./references/landscape.md)）：目標點存在嗎（workflow B 的結果：是 / 否 / 未知）→ `landscape_path`（L2，現在到目標的直線有沒有 barrier）→ `local_geometry`（L3，梯度範數、最大與最小 Hessian 特徵值）→ `reachability_report` 給出標為 heuristic 的建議。不宣稱保證可達。
 
 ## 症狀到方法
 
@@ -46,6 +49,7 @@ Weight-space programming（WSP）：agent 讀取模型權重、以推理算出�
 | 有 base 與 finetuned 權重，想加減某個行為 | `task_vector` + `apply_task_vector`（λ 事先固定） |
 | 不知道該改哪一層 | `localize_by_patching` |
 | 修好後要驗證 | `edit_report`、`gate`、`sign_test_p` |
+| 目標存在但訓練到不了、想知道卡在哪 | `landscape_path`、`local_geometry`、`reachability_report`（[wsp_landscape.py](./scripts/wsp_landscape.py)） |
 
 ## 編輯 op 與符號慣例
 
@@ -76,10 +80,11 @@ Windows 原生，只需要 PyTorch（`.safetensors` 另加 `--extra safetensors`
 | [scripts/wsp_inspect.py](./scripts/wsp_inspect.py) | CLI：`inventory`、`stats`、`cosine`、`dump`（整數 × 單一 scale，有字元上限） |
 | [scripts/wsp_session.py](./scripts/wsp_session.py) | `EditPolicy`、`WeightSession`、`ForwardBudget`、`check_agent_code` |
 | [scripts/wsp_methods.py](./scripts/wsp_methods.py) | 閉式方法、定位、`edit_report` |
+| [scripts/wsp_landscape.py](./scripts/wsp_landscape.py) | 路徑 barrier、filter-normalised 切片、局部幾何（L3）、可達性報告 |
 | [scripts/wsp_controls.py](./scripts/wsp_controls.py) | `matched_random_direction`、`shuffled_copy`、`permute_outputs` |
 | [scripts/wsp_compare.py](./scripts/wsp_compare.py) | `paired_counts`、`sign_test_p`、`gate`、`per_class_deltas` |
 
-範例：`uv run --project <root> python <root>/scripts/wsp_inspect.py stats model.pt --pattern "fc|head"`。完整流程見 [test_end_to_end.py](./tests/test_end_to_end.py) 與 [test_methods.py](./tests/test_methods.py)；跑測試：`uv run --project <root> --extra dev pytest <root>/tests -q -p no:cacheprovider`。載入權重只用 `torch.load(weights_only=True)`。
+範例：`uv run --project <root> python <root>/scripts/wsp_inspect.py stats model.pt --pattern "fc|head"`。完整流程見 [test_end_to_end.py](./tests/test_end_to_end.py) 與 [test_methods.py](./tests/test_methods.py)、[test_landscape.py](./tests/test_landscape.py)；跑測試：`uv run --project <root> --extra dev pytest <root>/tests -q -p no:cacheprovider`。載入權重只用 `torch.load(weights_only=True)`。
 
 ## 誠實規則
 

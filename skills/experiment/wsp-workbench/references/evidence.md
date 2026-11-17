@@ -12,6 +12,19 @@
 | Arditi et al., "Refusal in Language Models Is Mediated by a Single Direction", NeurIPS 2024。[連結](https://arxiv.org/abs/2406.11717) | 權重正交化 `W' = W - r rᵀ W`，作用於寫入 residual stream 的矩陣 | `orthogonalize`（等同下方 MIT 報告的 Qwen 編輯） |
 | Ilharco et al., "Editing Models with Task Arithmetic", ICLR 2023。[連結](https://arxiv.org/abs/2212.04089) | task vector = finetuned - pretrained；取負或相加可調整行為 | `task_vector`、`apply_task_vector` |
 
+### 地形診斷方法（A 級，供 workflow D）
+
+| 論文 | 重點 | 本 skill 對應 |
+|---|---|---|
+| Goodfellow, Vinyals & Saxe, "Qualitatively characterizing neural network optimization problems", ICLR 2015。[arXiv:1412.6544](https://arxiv.org/abs/1412.6544) | 沿初始點到解的直線看損失，多數情況單調下降 | `landscape_path` |
+| Li et al., "Visualizing the Loss Landscape of Neural Nets", NeurIPS 2018。[arXiv:1712.09913](https://arxiv.org/abs/1712.09913) | filter normalisation 讓不同網路的切片可比較 | `landscape_slice` |
+| Garipov et al., "Loss Surfaces, Mode Connectivity, and Fast Ensembling of DNNs", NeurIPS 2018。[arXiv:1802.10026](https://arxiv.org/abs/1802.10026) | 不同解可由低損失曲線連接 | `landscape_path` 的對照背景 |
+| Draxler et al., "Essentially No Barriers in Neural Network Energy Landscape", ICML 2018。[arXiv:1803.00885](https://arxiv.org/abs/1803.00885) | 不同極小點之間可找到幾乎無 barrier 的路徑 | 同上 |
+| Frankle et al., "Linear Mode Connectivity and the Lottery Ticket Hypothesis", ICML 2020。[arXiv:1912.05803](https://arxiv.org/abs/1912.05803) | barrier 定義：沿線損失減去兩端的線性內插，取最大值 | `landscape_path` 的 `barrier` |
+| Ghorbani et al., "An Investigation into Neural Net Optimization via Hessian Eigenvalue Density", ICML 2019。[arXiv:1901.10159](https://arxiv.org/abs/1901.10159) | 以 Hessian 特徵值判讀優化行為 | `local_geometry` |
+
+這些是診斷（量測）方法，不是編輯方法；實作細節與限制見 [landscape.md](./landscape.md)。
+
 這些論文的實驗多在 LLM 或大型視覺模型上；本 skill 的實作是簡化的閉式版本，差異與限制見 [methods.md](./methods.md)。**不得把本 skill 的結果歸功於論文**。
 
 ## B 級：MIT WSP 報告（初步、單一模型）
@@ -37,6 +50,7 @@
 ## 本 skill 的自我驗證
 
 - `tests/test_end_to_end.py`：合成 5 類資料，植入「部分 class 0 被標成 class 1」，以閉式 rank-1 編輯修復。
+- `tests/test_landscape.py`：置換隱藏單元後功能相同的網路之間有明顯 barrier、自身路徑平坦；`w1·w2` 模型的鞍點與極小點特徵值符合解析值。
 - `tests/test_methods.py`：合成 4 類資料，植入「背景維度與 class 0 相關」的捷徑，以 LEACE 折進下一層修復，並檢查 specificity。
 
 這些只證明工具鏈與閉式公式運作，不證明方法在真實模型上有效。

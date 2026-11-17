@@ -163,6 +163,6 @@ def test_session_code_has_no_optimiser_calls():
     from wsp_session import check_agent_code
 
     for f in (Path(__file__).parent.parent / "scripts").glob("wsp_*.py"):
-        if f.name == "wsp_session.py":
-            continue  # defines the checker (its string constants are not calls)
+        if f.name in ("wsp_session.py", "wsp_landscape.py"):
+            continue  # the checker itself, and the trusted L3 measurement code
         assert check_agent_code(f.read_text(encoding="utf-8")) == []
