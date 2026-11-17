@@ -10,12 +10,13 @@ import ctypes
 import hashlib
 import json
 import re
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import torch
 
-LEVELS = ("L1", "L2")
+LEVELS = ("L1", "L2", "L3")
 
 
 class PolicyViolation(Exception):
@@ -24,6 +25,10 @@ class PolicyViolation(Exception):
 
 class BudgetExhausted(Exception):
     """The forward-pass budget is used up (or the access level forbids passes)."""
+
+
+class AccessDenied(Exception):
+    """The session's access level does not allow this operation."""
 
 
 class ForbiddenCode(Exception):
@@ -56,8 +61,9 @@ class EditPolicy:
 
 
 class ForwardBudget:
-    def __init__(self, max_passes: int):
+    def __init__(self, max_passes: int, name: str = "forward"):
         self.max_passes = max_passes
+        self.name = name
         self.used = 0
 
     @property
@@ -67,7 +73,7 @@ class ForwardBudget:
     def consume(self, n: int = 1) -> None:
         if self.used + n > self.max_passes:
             raise BudgetExhausted(
-                f"forward budget exhausted ({self.used}/{self.max_passes} used)"
+                f"{self.name} budget exhausted ({self.used}/{self.max_passes} used)"
             )
         self.used += n
 
@@ -123,6 +129,9 @@ class WeightSession:
 
     L1: code over weights only; forward passes are refused.
     L2: forward passes allowed up to `budget` calls (one call = one pass, any batch size).
+    L3: L2 plus gradient / Hessian-vector measurements by the trusted wsp_landscape functions,
+        up to `grad_budget` evaluations. Gradients never update weights; agent code still may
+        not use autograd (check_agent_code). L3 results are never pooled with L1/L2.
     """
 
     def __init__(
@@ -132,13 +141,17 @@ class WeightSession:
         level: str = "L1",
         budget: int = 0,
         ledger_path: str | Path | None = None,
+        access_level: str | None = None,
+        grad_budget: int = 0,
     ):
+        level = access_level or level
         if level not in LEVELS:
             raise ValueError(f"level must be one of {LEVELS} (L0 has no tools, so no session)")
         self.model = model
         self.policy = policy
         self.level = level
-        self.budget = ForwardBudget(budget if level == "L2" else 0)
+        self.budget = ForwardBudget(budget if level in ("L2", "L3") else 0)
+        self.grad_budget = ForwardBudget(grad_budget if level == "L3" else 0, name="gradient")
         self.ledger_path = Path(ledger_path) if ledger_path else None
         self.ledger: list[dict] = []
         self._before: dict[int, torch.Tensor] = {}
@@ -262,6 +275,28 @@ class WeightSession:
             raise PolicyViolation("dim must be 0 or 1")
         return self._commit("zero_units", name, W, note)
 
+    # ---- scratch space for measurements ---------------------------------
+    def _hashes(self) -> dict[str, str]:
+        return {k: tensor_hash(v) for k, v in self.model.state_dict().items()}
+
+    @contextmanager
+    def scratch(self):
+        """Let trusted measurement code move weights temporarily; restore and verify hashes on exit."""
+        saved = {k: v.clone() for k, v in self.model.state_dict().items()}
+        before = self._hashes()
+        was_training = self.model.training
+        try:
+            yield
+        finally:
+            self.model.load_state_dict(saved)
+            self.model.train(was_training)
+            if self._hashes() != before:
+                raise AssertionError("weights differ from their state before the measurement")
+
+    def require_level(self, level: str) -> None:
+        if LEVELS.index(self.level) < LEVELS.index(level):
+            raise AccessDenied(f"this needs access level {level}; the session is {self.level}")
+
     # ---- undo / baseline ----------------------------------------------
     def undo(self, edit_id: int) -> None:
         entry = next(
@@ -301,7 +336,7 @@ class WeightSession:
         `capture` lists module names whose outputs to return; `patch` maps module names to
         tensors that replace those modules' outputs (activation patching).
         """
-        if self.level != "L2":
+        if self.level not in ("L2", "L3"):
             raise BudgetExhausted(f"{self.level} does not allow forward passes")
         self.budget.consume(1)
         acts: dict[str, torch.Tensor] = {}

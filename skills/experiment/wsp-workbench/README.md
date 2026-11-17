@@ -7,6 +7,7 @@
 
 - 方法取自同儕審查的權重編輯論文（ROME、LEACE、Santurkar 等、Arditi 等、task arithmetic）的閉式變體，證據分級見 [`references/evidence.md`](./references/evidence.md)。
 - 每次編輯都經過 edit gate（允許哪些 tensor、改動比例上限、只收有限值）、寫入 ledger，並可 `undo` 回到逐位元相同的原始權重。
+- 另有誤差曲面診斷（workflow D）：目標點存在後，量測從目前權重到它的路徑 barrier 與局部曲率，判斷訓練卡在哪；梯度與 Hessian 只在明確開啟的 L3 用於量測，絕不更新權重。
 - 只能明確呼叫（`/wsp-workbench`），agent 不會自行觸發。
 
 ## 透過 skills.sh 安裝
@@ -40,7 +41,7 @@ npx skills update wsp-workbench -y        # 全域安裝加 -g
 
 之後一律用 `uv run --project <skill 目錄> python <腳本>`，**不要**再帶 `--extra cpu` 之類的參數，否則 uv 會把已裝的 GPU 版換掉。
 
-確認環境（約 15 秒，23 個測試）：
+確認環境（約 15 秒，30 個測試）：
 
 ```bash
 uv run --project <skill 目錄> --extra dev pytest <skill 目錄>/tests -q -p no:cacheprovider
@@ -57,7 +58,7 @@ uv run --project <skill 目錄> --extra dev pytest <skill 目錄>/tests -q -p no
 
 ## 目錄
 
-- `SKILL.md` — 工作流程、存取等級（L0/L1/L2）、症狀對應方法、誠實規則
+- `SKILL.md` — 工作流程、存取等級（L0/L1/L2/L3）、症狀對應方法、誠實規則
 - `references/` — 證據分級、讀取 / 介入 / 編程流程、方法公式與和論文的差異、相關實作比較
-- `scripts/` — `wsp_inspect.py`（CLI）、`wsp_session.py`、`wsp_methods.py`、`wsp_controls.py`、`wsp_compare.py`
+- `scripts/` — `wsp_inspect.py`（CLI）、`wsp_session.py`、`wsp_methods.py`、`wsp_landscape.py`（誤差曲面診斷）、`wsp_controls.py`、`wsp_compare.py`
 - `tests/` — 單元測試與植入錯誤的端到端測試（不連網，CPU 可跑）
