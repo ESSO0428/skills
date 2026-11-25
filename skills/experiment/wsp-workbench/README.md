@@ -8,6 +8,7 @@
 - 方法取自同儕審查的權重編輯論文（ROME、LEACE、Santurkar 等、Arditi 等、task arithmetic）的閉式變體，證據分級見 [`references/evidence.md`](./references/evidence.md)。
 - 每次編輯都經過 edit gate（允許哪些 tensor、改動比例上限、只收有限值）、寫入 ledger，並可 `undo` 回到逐位元相同的原始權重。
 - 另有誤差曲面診斷（workflow D）：目標點存在後，量測從目前權重到它的路徑 barrier 與局部曲率，判斷訓練卡在哪；梯度與 Hessian 只在明確開啟的 L3 用於量測，絕不更新權重。
+- 多輸入、非分類輸出（embedding、回歸）的模型：`forward` 直接吃多個輸入，`patch_plan` 做多節點 activation patching 與交互作用表，另有 checkpoint 位移分析（`checkpoint_trajectory`）。
 - 只能明確呼叫（`/wsp-workbench`），agent 不會自行觸發。
 
 ## 透過 skills.sh 安裝
@@ -54,7 +55,11 @@ uv run --project <skill 目錄> --extra dev pytest <skill 目錄>/tests -q -p no
 | 只讀存好的權重檔（`wsp_inspect.py inventory/stats/cosine`） | skill 自己的環境 |
 | 載入模型、跑 forward、做編輯（需要 import 你的模型類別） | 你專案的環境，把 `<skill 目錄>/scripts` 加進 `PYTHONPATH` |
 
-第二種情況 skill 的工具只依賴 PyTorch，你的專案環境本來就有，不會衝突。
+第二種情況 skill 的工具只依賴 PyTorch（加上 numpy），你的專案環境本來就有，不會衝突。
+
+多輸入模型（tuple / dict 呼叫）、embedding 回歸的 cosine 評估與 retrieval 的 recall@k 範例見 [`references/patching.md`](./references/patching.md)。
+
+用完想回報使用狀況時，請 agent 回答 [`references/feedback.md`](./references/feedback.md) 的問卷；`session.env` 與 ledger 的 `session_start` 紀錄會自動記下環境（Python、torch build、裝置）。
 
 ## 目錄
 

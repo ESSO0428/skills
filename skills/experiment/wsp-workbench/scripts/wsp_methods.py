@@ -5,6 +5,8 @@ references/methods.md for how they differ from the papers.
 """
 from __future__ import annotations
 
+import inspect
+import itertools
 import re
 import sys
 from pathlib import Path
@@ -20,7 +22,8 @@ except ImportError:  # torch lives in the cpu / cu126 / cu132 extras
 
 sys.path.insert(0, str(Path(__file__).parent))
 from wsp_compare import paired_counts, per_class_deltas  # noqa: E402
-from wsp_session import WeightSession  # noqa: E402
+from wsp_controls import make_patch  # noqa: E402
+from wsp_session import BudgetExhausted, WeightSession  # noqa: E402
 
 
 # ---- rank-one key/value edit (ROME-style least squares) -------------------
@@ -136,20 +139,82 @@ def apply_task_vector(session: WeightSession, tau, lam: float, note="") -> list[
 
 
 # ---- localisation by activation patching ----------------------------------
+def call_metric(metric_fn, output, inputs):
+    """Call metric_fn(output, inputs); one-argument metrics (output only) are also accepted."""
+    kinds = (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
+    try:
+        params = list(inspect.signature(metric_fn).parameters.values())
+        wide = any(p.kind is inspect.Parameter.VAR_POSITIONAL for p in params) or sum(p.kind in kinds for p in params) >= 2
+    except (TypeError, ValueError):
+        wide = False
+    return float(metric_fn(output, inputs) if wide else metric_fn(output))
+
+
 def localize_by_patching(session: WeightSession, layer_names, x_clean, x_corrupt, metric_fn) -> dict:
     """Per-layer effect of patching clean activations into a corrupt run (L2).
 
-    Costs 2 + len(layer_names) forward passes. `metric_fn(logits) -> float` is higher when the
-    behaviour is "clean". effect = metric(patched) - metric(corrupt); x_clean and x_corrupt must
-    be paired (same batch size).
+    Costs 2 + len(layer_names) forward passes. Inputs may be a tensor, a tuple/list or a dict.
+    `metric_fn(output)` or `metric_fn(output, inputs)` is higher when the behaviour is "clean".
+    effect = metric(patched) - metric(corrupt); x_clean and x_corrupt must be paired (same batch size).
     """
-    out_clean, acts = session.forward(x_clean, capture=list(layer_names))
-    m_clean = float(metric_fn(out_clean))
-    m_corrupt = float(metric_fn(session.forward(x_corrupt)))
+    need = 2 + len(layer_names)
+    session.require_level("L2")
+    if session.budget.remaining < need:
+        raise BudgetExhausted(f"needs {need} forward passes, only {session.budget.remaining} left")
+    out_clean, acts = session.forward_inputs(x_clean, capture=list(layer_names))
+    m_clean = call_metric(metric_fn, out_clean, x_clean)
+    m_corrupt = call_metric(metric_fn, session.forward_inputs(x_corrupt), x_corrupt)
     effects = {}
     for n in layer_names:
-        effects[n] = float(metric_fn(session.forward(x_corrupt, patch={n: acts[n]}))) - m_corrupt
-    return {"clean": m_clean, "corrupt": m_corrupt, "effects": effects}
+        out = session.forward_inputs(x_corrupt, patch={n: acts[n]})
+        effects[n] = call_metric(metric_fn, out, x_corrupt) - m_corrupt
+    return {"clean": m_clean, "corrupt": m_corrupt, "effects": effects, "env": session.env}
+
+
+def patch_plan(session: WeightSession, nodes, inputs, metric_fn, mode="zero", seed=0, max_order=2) -> dict:
+    """Patch every node alone, every pair and (if more than 2 nodes) all together (L2).
+
+    metric_fn(output, inputs) -> float, higher is better (accuracy, cosine, retrieval ...).
+    delta = metric(patched) - metric(baseline): negative means patching hurt.
+    For a pair or the all-nodes row: interaction = delta_joint - sum(single deltas of those nodes).
+      interaction ~ 0: effects add up.
+      interaction < 0: joint patching hurts MORE than the sum of single patches (redundancy / backup:
+                       each node hides the loss of the other).
+      interaction > 0: joint patching hurts LESS than the sum (the nodes share or jointly gate one effect,
+                       so the loss does not stack).
+    max_order=1 runs singles only; 2 adds pairs and the all-nodes row (when len(nodes) > 2).
+    Forward budget, checked up front: 1 + n + C(n,2) [+ 1 if n > 2].
+    All patches use the same seed, so "resample" swaps the same samples at every node.
+    """
+    nodes = list(nodes)
+    n = len(nodes)
+    if max_order not in (1, 2):
+        raise ValueError("max_order must be 1 or 2")
+    combos = [(i,) for i in range(n)]
+    if max_order == 2:
+        combos += list(itertools.combinations(range(n), 2))
+        if n > 2:
+            combos.append(tuple(range(n)))
+    need = 1 + len(combos)
+    session.require_level("L2")
+    if session.budget.remaining < need:
+        raise BudgetExhausted(f"patch_plan needs {need} forward passes, only {session.budget.remaining} left")
+    out, acts = session.forward_inputs(inputs, capture=nodes)
+    base = call_metric(metric_fn, out, inputs)
+    patches = {name: make_patch(mode, acts[name], seed) for name in nodes}
+    rows, single = [{"nodes": [], "metric": base, "delta": 0.0, "order": 0}], {}
+    for combo in combos:
+        names = [nodes[i] for i in combo]
+        patched = session.forward_inputs(inputs, patch={k: patches[k] for k in names})
+        metric = call_metric(metric_fn, patched, inputs)
+        row = {"nodes": names, "metric": metric, "delta": metric - base, "order": len(combo)}
+        if len(combo) == 1:
+            single[names[0]] = row["delta"]
+        else:
+            row["interaction"] = row["delta"] - sum(single[k] for k in names)
+        rows.append(row)
+    return {"level": "L2", "mode": mode if isinstance(mode, str) else "tensor", "baseline": base, "rows": rows,
+            "forward_passes": need, "env": session.env}
 
 
 # ---- efficacy / generalisation / specificity ------------------------------

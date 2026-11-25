@@ -9,7 +9,9 @@ import ast
 import ctypes
 import hashlib
 import json
+import platform
 import re
+import sys
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -40,6 +42,46 @@ class AccessDenied(Exception):
 
 class ForbiddenCode(Exception):
     """Agent code uses a gradient / optimiser feature that WSP forbids."""
+
+
+def env_info() -> dict:
+    """Where the numbers came from: Python, OS, torch build and devices.
+
+    torch_build is the local version tag (cpu, cu126, cu132 ...), or "pypi" when the version has none.
+    """
+    ver = torch.__version__
+    cuda = torch.cuda.is_available()
+    return {
+        "python": sys.version.split()[0],
+        "platform": platform.platform(),
+        "torch": ver,
+        "torch_cuda": torch.version.cuda,
+        "cuda_available": cuda,
+        "devices": [torch.cuda.get_device_name(i) for i in range(torch.cuda.device_count())] if cuda else [],
+        "torch_build": ver.split("+", 1)[1] if "+" in ver else "pypi",
+    }
+
+
+def _to_device(obj, device):
+    """Move tensors inside a tensor / tuple / list / dict to `device`."""
+    if isinstance(obj, torch.Tensor):
+        return obj.to(device)
+    if isinstance(obj, tuple):
+        return tuple(_to_device(o, device) for o in obj)
+    if isinstance(obj, list):
+        return [_to_device(o, device) for o in obj]
+    if isinstance(obj, dict):
+        return {k: _to_device(v, device) for k, v in obj.items()}
+    return obj
+
+
+def split_inputs(inputs):
+    """Model inputs as (args, kwargs): a tensor is one positional arg, a tuple/list is *args, a dict is **kwargs."""
+    if isinstance(inputs, dict):
+        return (), dict(inputs)
+    if isinstance(inputs, (tuple, list)):
+        return tuple(inputs), {}
+    return (inputs,), {}
 
 
 def tensor_hash(t: torch.Tensor) -> str:
@@ -166,6 +208,8 @@ class WeightSession:
         for p in model.parameters():
             p.requires_grad_(False)
         self.baseline = {k: tensor_hash(v) for k, v in model.state_dict().items()}
+        self.env = env_info()
+        self._log({"event": "session_start", "level": self.level, "env": self.env})
 
     # ---- helpers -------------------------------------------------------
     def _params(self) -> dict[str, torch.Tensor]:
@@ -337,11 +381,17 @@ class WeightSession:
             raise AssertionError(f"state differs from baseline: {bad}")
 
     # ---- forward passes (L2) ------------------------------------------
-    def forward(self, x, capture: list[str] | None = None, patch: dict[str, torch.Tensor] | None = None):
-        """One budgeted forward pass.
+    def forward_inputs(self, inputs, capture=None, patch=None):
+        """forward() with `inputs` as a tensor, a tuple/list (positional args) or a dict (kwargs)."""
+        args, kwargs = split_inputs(inputs)
+        return self.forward(*args, capture=capture, patch=patch, **kwargs)
+
+    def forward(self, *args, capture: list[str] | None = None, patch: dict[str, torch.Tensor] | None = None, **kwargs):
+        """One budgeted forward pass; any positional and keyword inputs go to the model.
 
         `capture` lists module names whose outputs to return; `patch` maps module names to
-        tensors that replace those modules' outputs (activation patching).
+        tensors that replace those modules' outputs (activation patching). Inputs are moved to
+        the weights' device. One call costs one pass, whatever the batch size.
         """
         if self.level not in ("L2", "L3"):
             raise BudgetExhausted(f"{self.level} does not allow forward passes")
@@ -356,12 +406,15 @@ class WeightSession:
                 )
             )
         for n, val in (patch or {}).items():
-            handles.append(modules[n].register_forward_hook(lambda m, i, o, val=val: val))
+            handles.append(modules[n].register_forward_hook(lambda m, i, o, val=val: val.to(o.device)))
         was_training = self.model.training
         self.model.eval()
         try:
             with torch.no_grad():
-                out = self.model(x)
+                dev = next((p.device for p in self.model.parameters()), None)
+                if dev is not None:
+                    args, kwargs = _to_device(args, dev), _to_device(kwargs, dev)
+                out = self.model(*args, **kwargs)
         finally:
             for h in handles:
                 h.remove()

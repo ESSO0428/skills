@@ -69,3 +69,43 @@ def test_controls_and_path_mix_devices():
     out = landscape_path(sess, gpu.state_dict(), other_cpu.state_dict(), torch.nn.functional.cross_entropy,
                          [(x, y)], n_points=5)
     assert len(out["losses"]) == 5 and sess._hashes() == before
+
+
+class TwoInput(torch.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.a = torch.nn.Sequential(torch.nn.Linear(4, 4), torch.nn.ReLU())
+        self.b = torch.nn.Sequential(torch.nn.Linear(4, 4), torch.nn.ReLU())
+
+    def forward(self, x1, x2):
+        return self.a(x1) + self.b(x2)
+
+
+def test_multi_input_forward_patch_plan_and_controls_on_cuda():
+    from wsp_controls import make_patch, random_activation, shuffle_pairing
+    from wsp_methods import patch_plan
+
+    torch.manual_seed(0)
+    sess = WeightSession(TwoInput().cuda(), POLICY, access_level="L2", budget=10)
+    x1, x2 = torch.rand(8, 4), torch.rand(8, 4)  # CPU inputs on a CUDA model
+    assert sess.forward(x1, x2).is_cuda
+    assert sess.forward_inputs({"x1": x1, "x2": x2}).is_cuda
+    res = patch_plan(sess, ["a", "b"], (x1, x2), lambda out, inputs: float(out.mean()), mode="resample")
+    assert len(res["rows"]) == 4 and sess.budget.used == 2 + 4
+    act = torch.randn(8, 4, device="cuda")
+    for mode in ("zero", "mean", "resample"):
+        assert make_patch(mode, act).is_cuda
+    assert random_activation(act).is_cuda
+    assert shuffle_pairing((x1.cuda(), x2.cuda()), 1)[1].is_cuda
+
+
+def test_checkpoint_trajectory_with_cuda_states_and_session():
+    from wsp_landscape import checkpoint_trajectory
+
+    _, gpu = make_pair(0)
+    states = [make_pair(s)[1].state_dict() for s in range(3)]  # CUDA state dicts
+    x, y = torch.randn(16, 6), torch.randint(0, 3, (16,))
+    sess = WeightSession(gpu, POLICY, access_level="L2", budget=20)
+    res = checkpoint_trajectory(states, session=sess, loss_fn=torch.nn.functional.cross_entropy,
+                                batches=[(x, y)], n_points=3)
+    assert len(res["segments"]) == 2 and res["piecewise_path"]["forward_passes"] == 6
