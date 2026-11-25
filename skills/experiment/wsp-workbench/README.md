@@ -28,7 +28,9 @@ npx skills add ESSO0428/skills -s wsp-workbench
 npx skills update wsp-workbench -y        # 全域安裝加 -g
 ```
 
-## 建立 uv 環境（第一次）
+更新會整個換掉 skill 資料夾，裡面的 `.venv` 也會一起刪除；**每次更新後都要重跑下面的 `uv sync`**。
+
+## 建立 uv 環境（第一次，以及每次更新後）
 
 安裝只會複製檔案。torch 不在預設依賴裡，**第一次一定要先選一個版本 `uv sync`**（沒做就執行工具或測試，會直接印出這段說明）。先看 `nvidia-smi` 右上角的 CUDA Version：
 
