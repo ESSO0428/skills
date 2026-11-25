@@ -41,3 +41,21 @@ L3 允許梯度與 Hessian-vector product（HVP），但只能由受信任的 `w
 - 訓練損失低不等於泛化好；曲率與 barrier 都是在指定的 batches 上量的。
 - HVP 的成本約為一次反向傳播，大模型要先評估預算；L3 不適合在大模型上無上限使用。
 - 直線路徑沒有 barrier 不代表優化器會走那條路；有 barrier 也不代表所有路徑都被擋住（Garipov et al. 的曲線可能連通）。
+
+## Checkpoint 軌跡（`checkpoint_trajectory`）
+
+輸入：依時間排序的 state dict（至少 2 個）。對每一段與每個符合 `pattern` 的浮點 tensor 回報：
+- `‖ΔW‖_F` 與相對範數 `‖ΔW‖ / ‖W_start‖`；
+- 對 ≥2 維 tensor（reshape 成 `(out, -1)`）：ΔW 前 `top_k` 個奇異值的能量占比 `Σσ_i² / Σσ²`（rank-1 的 ΔW 為 1.0）；
+- 相鄰兩段（需要 ≥3 個 checkpoint）：攤平 ΔW 的 cosine，以及主子空間重疊 `‖U_aᵀU_b‖_F² / k`（`k` 取兩者數值秩的較小者，奇異值低於最大值 1e-6 倍視為 0）；
+- 第一個到最後一個的淨摘要，含 `net_over_path_length`（淨位移除以各段位移長度和，1.0 表示各段位移同向）。
+
+給 session、`loss_fn`、`batches` 時（L2）另做分段路徑：對每對相鄰 checkpoint 跑一次 `landscape_path`，預算 `(段數) × n_points × len(batches)` 先檢查再執行。
+
+**能說與不能說**：
+- 能說「這兩個 checkpoint 之間的淨位移集中在哪些 tensor、是否低秩、相鄰兩段的位移是否同向」。
+- 不能說「訓練沿著這個方向走」：兩個 checkpoint 之間的實際路徑沒有被觀察到，位移可能是許多來回步驟的淨結果。cosine 與子空間重疊也取決於 checkpoint 的間隔。
+- 只有 2 個 checkpoint 時只有一段，方向一致性需要至少 3 個。
+
+**建議**：在使用者自己的訓練迴圈（WSP session 之外）每 N 個 step 存一次 `state_dict`，包含訓練初期與損失變化最大的區段，間隔不必相等但要記錄 step。
+

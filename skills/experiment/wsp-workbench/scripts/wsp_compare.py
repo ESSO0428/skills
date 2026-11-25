@@ -56,7 +56,35 @@ def per_class_deltas(y, base_pred, new_pred) -> dict[int, dict]:
     return out
 
 
+def recall_at_k(pred, gallery, query_labels, gallery_labels, k=5, exclude_self=None) -> float:
+    """Retrieval recall@k by cosine similarity between predicted embeddings and a gallery.
+
+    A query is a hit if any of its top-k gallery entries has the query's label (identity).
+    exclude_self: optional LongTensor, one gallery index per query (-1 = none): that entry is never
+    ranked, so a query is not scored against its own item. Queries with no positive left in the
+    gallery are skipped. Returns the mean hit rate over the remaining queries (nan if none).
+    """
+    import torch  # lazy: this module stays importable without torch
+
+    dev = pred.device
+    gallery, q_lab = gallery.to(dev), torch.as_tensor(query_labels).to(dev)
+    g_lab = torch.as_tensor(gallery_labels).to(dev)
+    sim = torch.nn.functional.normalize(pred.float(), dim=1) @ torch.nn.functional.normalize(gallery.float(), dim=1).T
+    positives = q_lab[:, None] == g_lab[None, :]
+    if exclude_self is not None:
+        ex = torch.as_tensor(exclude_self).to(dev)
+        rows = torch.nonzero(ex >= 0).flatten()
+        sim[rows, ex[rows]] = float("-inf")
+        positives[rows, ex[rows]] = False
+    usable = positives.any(1)
+    if not bool(usable.any()):
+        return float("nan")
+    top = sim.topk(min(k, sim.shape[1]), dim=1).indices
+    hit = positives.gather(1, top).any(1)
+    return float(hit[usable].float().mean())
+
+
 if __name__ == "__main__":
     import argparse
 
-    argparse.ArgumentParser(description="Library: paired_counts, sign_test_p, gate, per_class_deltas. Import it; it has no CLI.").parse_args()
+    argparse.ArgumentParser(description="Library: paired_counts, sign_test_p, gate, per_class_deltas, recall_at_k. Import it; it has no CLI.").parse_args()

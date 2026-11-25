@@ -9,6 +9,7 @@ is still checked by `check_agent_code`.
 """
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
@@ -28,7 +29,7 @@ from wsp_session import BudgetExhausted, WeightSession  # noqa: E402
 # ---- helpers ---------------------------------------------------------------
 def _loss_no_grad(session: WeightSession, loss_fn, batches) -> float:
     """Mean loss over batches; one budgeted forward pass per batch."""
-    return float(sum(float(loss_fn(session.forward(x), y)) for x, y in batches) / len(batches))
+    return float(sum(float(loss_fn(session.forward_inputs(x), y)) for x, y in batches) / len(batches))
 
 
 def _need_passes(session: WeightSession, n: int) -> None:
@@ -176,7 +177,7 @@ def local_geometry(session, loss_fn, batches, iters=20, grad_tol=1e-2, eig_tol=1
     return {"level": "L3", "loss": float(loss.detach()), "grad_norm": gnorm, "lambda_max": lam_max,
             "lambda_min": lam_min, "sharpness": lam_max, "label": label,
             "thresholds": {"grad_tol": grad_tol, "eig_tol": eig_tol, "heuristic": True},
-            "gradient_evaluations": 1 + 5 + 2 * iters}
+            "gradient_evaluations": 1 + 5 + 2 * iters, "env": session.env}
 
 
 # ---- combining evidence --------------------------------------------------------
@@ -232,10 +233,111 @@ def reachability_report(target_exists, path=None, geometry=None, barrier_tol=0.0
     }
 
 
+# ---- checkpoint trajectory: net displacement between saved checkpoints ----------
+def _cos(a: torch.Tensor, b: torch.Tensor):
+    na, nb = float(a.norm()), float(b.norm())
+    return None if na == 0 or nb == 0 else float(a @ b) / (na * nb)
+
+
+def _delta_stats(dW: torch.Tensor, w_start: torch.Tensor, top_k: int) -> tuple[dict, torch.Tensor | None]:
+    """Norms, top-k singular-value energy share and the principal left subspace of one displacement."""
+    fro = float(dW.norm())
+    w_norm = float(w_start.norm())
+    info = {"fro": fro, "relative": fro / w_norm if w_norm > 0 else None}
+    if dW.ndim < 2:
+        return info, None
+    s_vals_u = torch.linalg.svd(dW.reshape(dW.shape[0], -1), full_matrices=False)
+    U, S = s_vals_u[0], s_vals_u[1]
+    total = float((S ** 2).sum())
+    k = min(top_k, len(S))
+    info["top_k_energy_share"] = float((S[:k] ** 2).sum()) / total if total > 0 else None
+    rank = int((S > 1e-6 * float(S[0])).sum()) if total > 0 else 0
+    kk = min(k, rank)
+    return info, (U[:, :kk] if kk > 0 else None)
+
+
+def checkpoint_trajectory(states, pattern=".", top_k=3, session=None, loss_fn=None, batches=None, n_points=11) -> dict:
+    """Describe the net displacement between time-ordered checkpoints (state dicts).
+
+    This is NOT the direction training moved along: checkpoints are snapshots, and the path between
+    two of them is not observed. Per segment and matching floating tensor: ||dW||_F, relative norm
+    ||dW|| / ||W_start|| and, for >=2-D tensors (viewed as (out, -1)), the top-k singular-value energy
+    share of dW. Between consecutive segments (needs >= 3 checkpoints): cosine of the flattened dW and
+    principal-subspace overlap ||U_a^T U_b||_F^2 / k, with k the smaller numerical rank (singular values above 1e-6 of the largest; <= top_k).
+    If session, loss_fn and batches are all given (L2), also the loss along the straight line between
+    each consecutive pair (landscape_path); the budget is checked before anything runs.
+    """
+    if len(states) < 2:
+        raise ValueError("need at least two checkpoints")
+    given = [x is not None for x in (session, loss_fn, batches)]
+    if any(given) and not all(given):
+        raise ValueError("pass session, loss_fn and batches together (or none of them)")
+    names = [k for k, v in states[0].items()
+             if re.search(pattern, k) and v.is_floating_point() and all(k in s and s[k].shape == v.shape for s in states)]
+    if not names:
+        raise ValueError(f"no floating tensor matches {pattern!r} in every checkpoint")
+    if session is not None:
+        _need_passes(session, (len(states) - 1) * n_points * len(batches))
+
+    def dev(st, k):
+        return st[k].detach().cpu().double()
+
+    deltas, segments, subspaces = [], [], []
+    for i in range(len(states) - 1):
+        per, dws, subs = {}, {}, {}
+        for k in names:
+            dW = dev(states[i + 1], k) - dev(states[i], k)
+            per[k], subs[k] = _delta_stats(dW, dev(states[i], k), top_k)
+            dws[k] = dW
+        flat = torch.cat([d.reshape(-1) for d in dws.values()])
+        w0 = torch.cat([dev(states[i], k).reshape(-1) for k in names])
+        segments.append({"from": i, "to": i + 1, "tensors": per, "total_fro": float(flat.norm()),
+                         "total_relative": float(flat.norm() / w0.norm()) if float(w0.norm()) > 0 else None})
+        deltas.append(dws)
+        subspaces.append(subs)
+
+    consecutive = []
+    for i in range(len(deltas) - 1):
+        per = {}
+        for k in names:
+            row = {"cosine": _cos(deltas[i][k].reshape(-1), deltas[i + 1][k].reshape(-1))}
+            ua, ub = subspaces[i][k], subspaces[i + 1][k]
+            if ua is not None and ub is not None:
+                kk = min(ua.shape[1], ub.shape[1])
+                row["subspace_overlap"] = float((ua[:, :kk].T @ ub[:, :kk]).pow(2).sum()) / kk
+            per[k] = row
+        fa = torch.cat([d.reshape(-1) for d in deltas[i].values()])
+        fb = torch.cat([d.reshape(-1) for d in deltas[i + 1].values()])
+        consecutive.append({"segments": [i, i + 1], "tensors": per, "global_cosine": _cos(fa, fb)})
+
+    net_per, net_dws = {}, {}
+    for k in names:
+        dW = dev(states[-1], k) - dev(states[0], k)
+        net_per[k], _ = _delta_stats(dW, dev(states[0], k), top_k)
+        net_dws[k] = dW
+    net_flat = torch.cat([d.reshape(-1) for d in net_dws.values()])
+    path_len = sum(s["total_fro"] for s in segments)
+    net = {"from": 0, "to": len(states) - 1, "tensors": net_per, "total_fro": float(net_flat.norm()),
+           "net_over_path_length": float(net_flat.norm()) / path_len if path_len > 0 else None}
+
+    notes = ["These are net displacements between saved checkpoints, not the direction training moved along: "
+             "the path between two checkpoints is unobserved."]
+    if len(states) == 2:
+        notes.append("Only two checkpoints: one segment. Direction consistency needs at least 3 checkpoints.")
+    piecewise = None
+    if session is not None:
+        paths = [landscape_path(session, states[i], states[i + 1], loss_fn, batches, n_points)
+                 for i in range(len(states) - 1)]
+        piecewise = {"paths": paths, "max_barrier": max(p["barrier"] for p in paths),
+                     "forward_passes": sum(p["forward_passes"] for p in paths)}
+    return {"level": "L2" if session is not None else "L1", "env": None if session is None else session.env, "tensors": names, "segments": segments,
+            "consecutive": consecutive, "net": net, "piecewise_path": piecewise, "notes": notes}
+
+
 if __name__ == "__main__":
     import argparse
 
     argparse.ArgumentParser(
-        description="Library: landscape_path, landscape_slice, local_geometry (L3), reachability_report. "
+        description="Library: landscape_path, landscape_slice, local_geometry (L3), reachability_report, checkpoint_trajectory. "
         "Import it; it has no CLI."
     ).parse_args()

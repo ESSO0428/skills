@@ -3,7 +3,7 @@ name = "wsp-workbench"
 version = "0.1.0"
 description = "Weight-space programming workbench: gated, ledgered, non-optimising weight edits for PyTorch models."
 requires-python = ">=3.11"
-dependencies = []
+dependencies = ["numpy"]
 
 [project.optional-dependencies]
 cpu = ["torch"]

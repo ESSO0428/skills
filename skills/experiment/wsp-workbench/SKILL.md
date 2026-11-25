@@ -27,13 +27,15 @@ Weight-space programming（WSP）：agent 讀取模型權重、以推理算出�
 | L2 | L1 加上有上限的 forward pass（hook 取 activation、activation patching）；預算用完 session 就拒絕 |
 | L3 | L2 加上梯度與 Hessian-vector product，**只做量測**；須明確 `WeightSession(access_level="L3", grad_budget=N)`，每次量測扣預算並驗證權重 hash 不變 |
 
-`WeightSession` 接受 L1 / L2 / L3。L3 結果標 L3，不與 L1 / L2 混算。
+`WeightSession` 接受 L1 / L2 / L3。L3 結果標 L3，不與 L1 / L2 混算。`forward` 接受任意位置與關鍵字輸入（多輸入模型直接傳，或用 `forward_inputs(tensor | tuple | dict)`），輸入會自動搬到權重所在的裝置，一次呼叫算一次預算。
+
+**非分類輸出（embedding、回歸）**：L2 activation patching 是主要證據，L1 靜態讀權重只是輔助，不能單獨成為結論。
 
 ## Workflow
 
 **A. Weight Reading**（[reading.md](./references/reading.md)）：inventory → 結構統計 → 先寫假設與預測 → 必做對照（within-tensor shuffle、permute output labels）→ 報告。同一結論在對照組也出現就推翻。寫「權重支持 X」，不寫「模型做 X」。
 
-**B. Weight Intervention**（[intervention.md](./references/intervention.md)）：先書面固定目標、metric、切分、預算、門檻 → **定位**（`localize_by_patching`、輸出層 row cosine）→ **選 A 級（同儕審查）方法** → 建立編輯 → **gate**（含 norm-matched 隨機對照）→ held-out 只看一次，報 efficacy / generalisation / specificity → **保留或 `undo`**（`assert_baseline()`）。
+**B. Weight Intervention**（[intervention.md](./references/intervention.md)）：先書面固定目標、metric、切分、預算、門檻 → **定位**（`patch_plan`、`localize_by_patching`、輸出層 row cosine）→ **選 A 級（同儕審查）方法** → 建立編輯 → **gate**（含 norm-matched 隨機對照）→ held-out 只看一次，報 efficacy / generalisation / specificity → **保留或 `undo`**（`assert_baseline()`）。
 
 **C. Weight Programming**（[programming.md](./references/programming.md)）：從 spec 起手、權重全 0；用推理構造；依 spec 做 unit test；與簡單 baseline 比；每版記 hash。
 
@@ -48,6 +50,9 @@ Weight-space programming（WSP）：agent 讀取模型權重、以推理算出�
 | 已找到某層不該寫入的一個方向 | `orthogonalize`（`project_out`，alpha=1） |
 | 有 base 與 finetuned 權重，想加減某個行為 | `task_vector` + `apply_task_vector`（λ 事先固定） |
 | 不知道該改哪一層 | `localize_by_patching` |
+| 多分支或多輸入模型，想知道各分支的貢獻與交互作用（任何 metric） | `patch_plan`（zero / mean / resample，見 [patching.md](./references/patching.md)） |
+| 輸出是 embedding 或回歸值，需要對照組 | `shuffle_pairing`、`random_activation`（`permute_outputs` 只用於類別輸出） |
+| 手上有多個訓練 checkpoint，想看權重位移 | `checkpoint_trajectory`（淨位移，不是訓練方向） |
 | 修好後要驗證 | `edit_report`、`gate`、`sign_test_p` |
 | 目標存在但訓練到不了、想知道卡在哪 | `landscape_path`、`local_geometry`、`reachability_report`（[wsp_landscape.py](./scripts/wsp_landscape.py)） |
 
@@ -79,15 +84,16 @@ Windows 原生，只需要 PyTorch（`.safetensors` 另加 `--extra safetensors`
 |---|---|
 | [scripts/wsp_inspect.py](./scripts/wsp_inspect.py) | CLI：`inventory`、`stats`、`cosine`、`dump`（整數 × 單一 scale，有字元上限） |
 | [scripts/wsp_session.py](./scripts/wsp_session.py) | `EditPolicy`、`WeightSession`、`ForwardBudget`、`check_agent_code` |
-| [scripts/wsp_methods.py](./scripts/wsp_methods.py) | 閉式方法、定位、`edit_report` |
-| [scripts/wsp_landscape.py](./scripts/wsp_landscape.py) | 路徑 barrier、filter-normalised 切片、局部幾何（L3）、可達性報告 |
-| [scripts/wsp_controls.py](./scripts/wsp_controls.py) | `matched_random_direction`、`shuffled_copy`、`permute_outputs` |
+| [scripts/wsp_methods.py](./scripts/wsp_methods.py) | 閉式方法、定位（`localize_by_patching`、`patch_plan`）、`edit_report` |
+| [scripts/wsp_landscape.py](./scripts/wsp_landscape.py) | 路徑 barrier、filter-normalised 切片、局部幾何（L3）、可達性報告、`checkpoint_trajectory` |
+| [scripts/wsp_controls.py](./scripts/wsp_controls.py) | `matched_random_direction`、`shuffled_copy`、`permute_outputs`、`make_patch`、`random_activation`、`shuffle_pairing` |
 | [scripts/wsp_compare.py](./scripts/wsp_compare.py) | `paired_counts`、`sign_test_p`、`gate`、`per_class_deltas` |
 
 範例：`uv run --project <root> python <root>/scripts/wsp_inspect.py stats model.pt --pattern "fc|head"`。完整流程見 [test_end_to_end.py](./tests/test_end_to_end.py) 與 [test_methods.py](./tests/test_methods.py)、[test_landscape.py](./tests/test_landscape.py)；跑測試：`uv run --project <root> --extra dev pytest <root>/tests -q -p no:cacheprovider`。載入權重只用 `torch.load(weights_only=True)`。
 
 ## 誠實規則
 
+- 使用者要求針對這次使用過程給回饋時，直接在回覆中填寫 [feedback.md](./references/feedback.md) 的問卷，不另存檔案。
 - 每個結論標 access level、模型、樣本數與信心；單次嘗試不當成確定事實。
 - 結果不得歸功於論文：本 skill 是閉式簡化版。
 - 「讀懂權重」未經對照驗證前一律是假設。不確定時保留 `unknown`；失敗的編輯與無效的對照照實回報。

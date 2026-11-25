@@ -204,3 +204,56 @@ def test_inspect_functions_and_cli(tmp_path, capsys):
     assert "0.weight" in capsys.readouterr().out
     inspect_main(["stats", str(path), "--pattern", "2.weight"])
     assert "effective_rank" in capsys.readouterr().out
+
+
+def test_env_info_fields_and_session_start_record(tmp_path):
+    from wsp_session import env_info
+
+    env = env_info()
+    for key in ("python", "platform", "torch", "torch_cuda", "cuda_available", "devices", "torch_build"):
+        assert key in env
+    ver = torch.__version__
+    assert env["torch_build"] == (ver.split("+", 1)[1] if "+" in ver else "pypi")
+    assert isinstance(env["devices"], list) and env["cuda_available"] == torch.cuda.is_available()
+    ledger = tmp_path / "ledger.jsonl"
+    s = session(ledger_path=ledger)
+    s.assign("2.bias", [0], [1.0])
+    lines = [json.loads(x) for x in ledger.read_text().splitlines()]
+    assert lines[0]["event"] == "session_start" and lines[0]["env"] == s.env == env
+    assert [x["event"] for x in lines] == ["session_start", "edit"]
+    assert s.ledger[0]["event"] == "session_start"
+
+
+def test_results_carry_env():
+    from wsp_methods import localize_by_patching, patch_plan
+
+    s = session(level="L2", budget=10)
+    x = torch.randn(4, 6)
+    out = patch_plan(s, ["0", "2"], x, lambda o, i: float(o.mean()))
+    assert out["env"] is s.env
+    assert localize_by_patching(session(level="L2", budget=10), ["0"], x, x + 1, lambda o: float(o.mean()))["env"]["torch"]
+
+
+def test_recall_at_k_on_toy_gallery():
+    from wsp_compare import recall_at_k
+
+    # identities A (items 0, 1) and B (items 2, 3)
+    gallery = torch.tensor([[1.0, 0.0], [0.0, -1.0], [0.8, 0.6], [0.6, 0.8]])
+    g_lab = torch.tensor([0, 0, 1, 1])
+    # queries predicted close to A and close to B
+    pred = torch.tensor([[1.0, 0.1], [0.7, 0.7]])
+    q_lab = torch.tensor([0, 1])
+    assert recall_at_k(pred, gallery, q_lab, g_lab, k=1) == 1.0
+    assert recall_at_k(pred, gallery, torch.tensor([1, 0]), g_lab, k=1) == 0.0  # wrong identities
+    assert recall_at_k(pred, gallery, torch.tensor([1, 0]), g_lab, k=4) == 1.0  # everything fits in top 4
+    # a query that IS gallery item 0: counting it against itself inflates recall
+    own = gallery[:1]
+    assert recall_at_k(own, gallery, torch.tensor([0]), g_lab, k=1) == 1.0
+    assert recall_at_k(own, gallery, torch.tensor([0]), g_lab, k=1, exclude_self=torch.tensor([0])) == 0.0
+    assert recall_at_k(own, gallery, torch.tensor([0]), g_lab, k=4, exclude_self=torch.tensor([0])) == 1.0
+    # a query whose identity has no gallery positive is skipped, not counted as a miss
+    assert recall_at_k(pred, gallery, torch.tensor([0, 9]), g_lab, k=1) == 1.0
+    only = recall_at_k(own, gallery, torch.tensor([1]), g_lab, k=1, exclude_self=torch.tensor([2]))
+    assert 0.0 <= only <= 1.0
+    solo = recall_at_k(own, gallery, torch.tensor([2]), torch.tensor([0, 0, 1, 2]), k=1, exclude_self=torch.tensor([3]))
+    assert solo != solo  # nan: the query's only positive was itself
