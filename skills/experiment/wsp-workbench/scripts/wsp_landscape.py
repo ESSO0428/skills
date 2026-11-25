@@ -23,13 +23,27 @@ except ImportError:  # torch lives in the cpu / cu126 / cu132 extras
 (add --extra dev to run the tests; see README.md)""")
 
 sys.path.insert(0, str(Path(__file__).parent))
-from wsp_session import BudgetExhausted, WeightSession  # noqa: E402
+from wsp_session import BudgetExhausted, WeightSession, _to_device, split_inputs  # noqa: E402
 
 
 # ---- helpers ---------------------------------------------------------------
 def _loss_no_grad(session: WeightSession, loss_fn, batches) -> float:
-    """Mean loss over batches; one budgeted forward pass per batch."""
-    return float(sum(float(loss_fn(session.forward_inputs(x), y)) for x, y in batches) / len(batches))
+    """Mean loss over batches; one budgeted forward pass per batch. Targets follow the output's device."""
+    total = 0.0
+    for x, y in batches:
+        out = session.forward_inputs(x)
+        total += float(loss_fn(out, _to_device(y, out.device)))
+    return total / len(batches)
+
+
+def _model_loss(model, loss_fn, batches):
+    """Differentiable mean loss (used only by trusted L3 measurement); inputs and targets on the model's device."""
+    dev = next(model.parameters()).device
+    total = 0
+    for x, y in batches:
+        args, kwargs = split_inputs(_to_device(x, dev))
+        total = total + loss_fn(model(*args, **kwargs), _to_device(y, dev))
+    return total / len(batches)
 
 
 def _need_passes(session: WeightSession, n: int) -> None:
@@ -128,7 +142,7 @@ def local_geometry(session, loss_fn, batches, iters=20, grad_tol=1e-2, eig_tol=1
             p.requires_grad_(True)
         session.model.eval()
         try:
-            loss = sum(loss_fn(session.model(x), y) for x, y in batches) / len(batches)
+            loss = _model_loss(session.model, loss_fn, batches)
             grads = torch.autograd.grad(loss, params, create_graph=True)
             g = _flat(grads)
             gnorm = float(g.detach().norm())

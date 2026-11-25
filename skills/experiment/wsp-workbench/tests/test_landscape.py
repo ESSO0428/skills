@@ -204,3 +204,24 @@ def test_reachability_report_scenarios():
     assert reachability_report(True, None, mn)["verdict"] == "target_exists_path_unknown"
     for r in (r1, r2, r3):
         assert all(x["tag"] == "heuristic" for x in r["recommendations"]) and "never guarantees" in r["caveat"]
+
+
+def test_local_geometry_and_path_accept_multi_input_batches():
+    """Two-input model: batches carry a tuple of inputs; loss targets travel with the output."""
+
+    class Two(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.a, self.b = torch.nn.Linear(4, 3), torch.nn.Linear(4, 3)
+
+        def forward(self, x1, x2):
+            return self.a(x1) + self.b(x2)
+
+    torch.manual_seed(0)
+    m = Two()
+    batches = [((torch.randn(16, 4), torch.randn(16, 4)), torch.randint(0, 3, (16,)))]
+    geo = local_geometry(WeightSession(m, POLICY, access_level="L3", grad_budget=46), CE, batches)
+    assert geo["label"] in ("not_critical", "saddle", "minimum_like")
+    sess = WeightSession(m, POLICY, access_level="L2", budget=3)
+    other = {k: v + 0.1 for k, v in m.state_dict().items()}
+    assert len(landscape_path(sess, m.state_dict(), other, CE, batches, n_points=3)["losses"]) == 3

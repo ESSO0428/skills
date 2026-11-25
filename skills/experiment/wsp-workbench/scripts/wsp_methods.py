@@ -23,7 +23,7 @@ except ImportError:  # torch lives in the cpu / cu126 / cu132 extras
 sys.path.insert(0, str(Path(__file__).parent))
 from wsp_compare import paired_counts, per_class_deltas  # noqa: E402
 from wsp_controls import make_patch  # noqa: E402
-from wsp_session import BudgetExhausted, WeightSession  # noqa: E402
+from wsp_session import _to_device, BudgetExhausted, WeightSession  # noqa: E402
 
 
 # ---- rank-one key/value edit (ROME-style least squares) -------------------
@@ -140,13 +140,18 @@ def apply_task_vector(session: WeightSession, tau, lam: float, note="") -> list[
 
 # ---- localisation by activation patching ----------------------------------
 def call_metric(metric_fn, output, inputs):
-    """Call metric_fn(output, inputs); one-argument metrics (output only) are also accepted."""
+    """Call metric_fn(output, inputs); one-argument metrics (output only) are also accepted.
+
+    Inputs are moved to the output's device first, so metrics can mix them freely.
+    """
     kinds = (inspect.Parameter.POSITIONAL_ONLY, inspect.Parameter.POSITIONAL_OR_KEYWORD)
     try:
         params = list(inspect.signature(metric_fn).parameters.values())
         wide = any(p.kind is inspect.Parameter.VAR_POSITIONAL for p in params) or sum(p.kind in kinds for p in params) >= 2
     except (TypeError, ValueError):
         wide = False
+    if wide and isinstance(output, torch.Tensor):
+        inputs = _to_device(inputs, output.device)
     return float(metric_fn(output, inputs) if wide else metric_fn(output))
 
 
